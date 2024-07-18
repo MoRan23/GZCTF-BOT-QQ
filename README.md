@@ -22,7 +22,7 @@ apt install python3.10
 sudo apt install python3.10-venv
 sudo apt install libgbm1 libasound2
 python3 -m venv bot
-source myenv/bin/activate
+source bot/bin/activate
 pip install -r requirements.txt
 nb plugin install nonebot_plugin_apscheduler
 ```
