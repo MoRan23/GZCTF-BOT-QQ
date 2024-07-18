@@ -59,7 +59,7 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install d
 ```bash
 vim /etc/docker/daemon.json
 ```
-填入一下内容，保存  
+填入以下内容，保存  
 ```json
 {
     "registry-mirrors": [
