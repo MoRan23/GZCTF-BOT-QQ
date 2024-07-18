@@ -1,4 +1,4 @@
-from nonebot.adapters.cqhttp import Event
+from nonebot.adapters.onebot.v11 import Event
 from nonebot import get_plugin_config
 
 from .config import Config
