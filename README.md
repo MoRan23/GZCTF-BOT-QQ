@@ -9,14 +9,14 @@ GZCTF对接的qq机器人，基于NapCat+Nonebot框架
 ```暂未开发```
 ### 手动安装:
 下载项目并解压，进入项目文件夹
-1. 安装python3.10
+#### 1. 安装python3.10
 ```bash
 sudo apt install software-properties-common
 sudo add-apt-repository ppa:deadsnakes/ppa
 apt update
 apt install python3.10
 ```
-2. 安装依赖  
+#### 2. 安装依赖  
 建议使用虚拟环境
 ```bash
 sudo apt install python3.10-venv
@@ -30,7 +30,7 @@ nb plugin install nonebot_plugin_apscheduler
 ```bash
 pip install -i https://mirrors.ustc.edu.cn/pypi/web/simple -r requirements.txt
 ```
-3. 安装Docker
+#### 3. 安装Docker
 ```bash
 apt install apt-transport-https ca-certificates
 curl -fsSL http://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | sudo apt-key add -
@@ -38,7 +38,7 @@ sudo add-apt-repository -y "deb [arch=amd64] http://mirrors.aliyun.com/docker-ce
 sudo apt-get -y update
 sudo DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install docker-ce docker-compose-plugin
 ```
-docker换源
+##### docker换源
 ```bash
 vim /etc/docker/daemon.json
 ```
@@ -54,7 +54,7 @@ vim /etc/docker/daemon.json
 ```bash
 sudo systemctl daemon-reload && sudo systemctl restart docker
 ```
-4. 安装NapCatQQ并登录  
+#### 4. 安装NapCatQQ并登录  
 [NapCatQQ官网](https://napneko.github.io/zh-CN/guide/getting-started "NapCatQQ官网")
 ```bash
 docker run -d \
@@ -83,7 +83,7 @@ docker rm napcat
 ```
 请确保登录成功  
   
-配置`ACCESS_TOKEN`:  
+##### 配置`ACCESS_TOKEN`:  
 编辑`napcat/config/onebot11_[你的QQ号].json`  
 找到`token`字段, 如下所示:  
 ```json
@@ -102,7 +102,7 @@ docker rm napcat
 }
 ```
 保存`token`值  
-5. 配置机器人
+#### 5. 配置机器人
 配置文件在`gzctf-bot/plugins/gzctf_bot_qq/config.py`中  
 ```python
 CONFIG: dict = {
@@ -154,7 +154,7 @@ SUPERUSERS='["123456789","987654321"]'
 ONEBOT_ACCESS_TOKEN=GZCTFBOT xsaFFAFSaaxa
 ```
 保存`.env`文件  
-6. 启动机器人
+#### 6. 启动机器人
 ```bash
 nohup python3 bot.py >bot.log 2>&1 &
 ```
