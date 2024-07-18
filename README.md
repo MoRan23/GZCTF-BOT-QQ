@@ -26,6 +26,10 @@ source bot/bin/activate
 pip install -r requirements.txt
 nb plugin install nonebot_plugin_apscheduler
 ```
+`pip`下不动的换源   
+```bash
+pip install -i https://mirrors.ustc.edu.cn/pypi/web/simple -r requirements.txt
+```
 3. 安装Docker
 ```bash
 apt install apt-transport-https ca-certificates
