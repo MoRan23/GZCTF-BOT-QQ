@@ -24,9 +24,9 @@ def getGameList(name: str = None):
     try:
         game_list = SESSION.get(url=API_GAME_LIST_URL, headers=HEADERS)
     except Exception as e:
-        game_list = {}
+        game_list = []
     if name:
-        Temp_List = {}
+        Temp_List = []
         game_list = json.loads(game_list.text)
         for game in game_list:
             if game["title"] == name:

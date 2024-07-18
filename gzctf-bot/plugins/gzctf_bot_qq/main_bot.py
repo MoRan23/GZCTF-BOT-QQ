@@ -11,8 +11,8 @@ from .config import Config
 CONFIG = get_plugin_config(Config).CONFIG
 GAME_LIST = []
 if CONFIG.get("GAME_LIST"):
-    gameName = CONFIG.get("GAME_LIST")
-    GAME_LIST = getGameList(name=gameName)
+    for gameName in CONFIG.get("GAME_LIST"):
+        GAME_LIST = getGameList(name=gameName)
 else:
     GAME_LIST = getGameList()
 H = require("nonebot_plugin_apscheduler").scheduler
