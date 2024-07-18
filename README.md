@@ -38,6 +38,22 @@ sudo add-apt-repository -y "deb [arch=amd64] http://mirrors.aliyun.com/docker-ce
 sudo apt-get -y update
 sudo DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install docker-ce docker-compose-plugin
 ```
+docker换源
+```bash
+vim /etc/docker/daemon.json
+```
+填入一下内容，保存  
+```json
+{
+    "registry-mirrors": [
+        "https://hub.hk1.dkdun.com/"
+    ]
+}
+```
+重启docker
+```bash
+sudo systemctl daemon-reload && sudo systemctl restart docker
+```
 4. 安装NapCatQQ并登录  
 [NapCatQQ官网](https://napneko.github.io/zh-CN/guide/getting-started "NapCatQQ官网")
 ```bash
