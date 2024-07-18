@@ -77,7 +77,7 @@ sudo systemctl daemon-reload && sudo systemctl restart docker
 docker run -d \
 -e ACCOUNT=3766745185 \
 -e WSR_ENABLE=true \
--e WS_URLS='["ws://[此处替换为本机IP]:8080/onebot/v11/ws/"]' \
+-e WS_URLS='["ws://[此处替换为本机IP]:8988/onebot/v11/ws/"]' \
 -v ./napcat/app:/usr/src/app/napcat \
 -v ./napcat/config:/usr/src/app/napcat/config \
 -p 6099:6099 \
@@ -155,7 +155,7 @@ GZ_PASS = "Test123."
 ```
 //.env
 HOST=0.0.0.0
-PORT=8080
+PORT=8988
 COMMAND_START=["/"]
 COMMAND_SEP=["."]
 ONEBOT_ACCESS_TOKEN=XXX
