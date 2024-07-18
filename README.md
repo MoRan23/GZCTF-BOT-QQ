@@ -74,8 +74,13 @@ docker logs napcat
 ```
 如果提示失效，请再次输入上述命令查看更新后的二维码  
 或者通过`napcat/app/qrcode.png`扫码登录  
-或者打开网站`http://[此处替换为本机IP]:6099`扫码登录  
+或者打开网站`http://[此处替换为本机IP]:6099/webui`扫码登录  
 初始登录`token`在`napcat/config/webui.json`中  
+如果全部失败，删除`docker`容器重新执行上述命令  
+```bash
+docker stop napcat
+docker rm napcat
+```
 请确保登录成功  
   
 配置`ACCESS_TOKEN`:  
