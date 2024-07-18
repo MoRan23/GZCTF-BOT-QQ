@@ -39,7 +39,7 @@ sudo apt-get -y update
 sudo DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install docker-ce docker-compose-plugin
 ```
 4. 安装NapCatQQ并登录  
-[NapCatQQ官网]("https://napneko.github.io/zh-CN/guide/getting-started")
+[NapCatQQ官网](https://napneko.github.io/zh-CN/guide/getting-started "NapCatQQ官网")
 ```bash
 docker run -d \
 -e ACCOUNT=3766745185 \
