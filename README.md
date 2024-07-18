@@ -176,6 +176,21 @@ ONEBOT_ACCESS_TOKEN=GZCTFBOT xsaFFAFSaaxa
 nohup python3 bot.py >bot.log 2>&1 &
 ```
 机器人的日志将会存放到`bot.log`文件中
+## 赞助鸣谢
+### DKDUN
+<img src="https://cdn.moran233.xyz/https://raw.githubusercontent.com/MoRan23/moran/main/QQ%E5%9B%BE%E7%89%8720240630210148.png" alt="DKDUN 图标" width="150" height="150">
+官网：https://www.dkdun.cn/  
+
+ctf专区群: 727077055  
+<img src="https://cdn.moran233.xyz/https://raw.githubusercontent.com/MoRan23/moran/main/20240630210630.png" alt="DKDUN-CTF QQ群" width="150" height="150">  
+公众号：DK盾
+  
+dkdun 推出 ctfer 赞助计划  
+为各位热爱 ctf 的师傅提供优惠服务器  
+详情查看：https://mp.weixin.qq.com/s/38xWMM1Z0sO6znfg9TIklw
+  
+更多服务器优惠请入群查看！  
+  
 ## 更新日志
 ### 2024-07-18
 update: 新增功能:  
