@@ -15,6 +15,9 @@ UTC_PLUS_8_TIMEZONE = pytz.timezone('Asia/Shanghai')
 
 
 def parseArgs(s):
+    """
+        解析参数
+    """
     results = []
     depth = 0
     start = 0
@@ -23,13 +26,13 @@ def parseArgs(s):
     for i, char in enumerate(s):
         if char == '[':
             if depth == 0:
-                start = i + 1  # 记录最外层'['开始的位置
+                start = i + 1
                 in_brackets = True
             depth += 1
         elif char == ']':
             depth -= 1
             if depth == 0 and in_brackets:
-                results.append(s[start:i])  # 到达对应的']'，提取内容
+                results.append(s[start:i])
                 in_brackets = False
 
     return results
