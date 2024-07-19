@@ -61,7 +61,7 @@ msgTemp_hint = """======{type}======
 赛题: {challenge}
 提示: {hint}
 ======================="""
-msgTemp_new = """====={type}=====
+msgTemp_new = """======{type}======
 比赛: {gameName}
 时间: {time}
 类型: {challenge_type}
