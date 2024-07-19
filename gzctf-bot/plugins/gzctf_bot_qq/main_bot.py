@@ -79,11 +79,12 @@ flag所属队伍: {flagOwner}
 
 helpCmd = on_command("help", rule=checkIfListenOrPrivate)
 game = on_command("game", rule=checkIfListenOrPrivate)
+unlock = on_command("unlock", rule=checkIfListenOrPrivate)
 open = on_command("open", rule=checkIfListenOrPrivate, permission=SUPERUSER)
 close = on_command("close", rule=checkIfListenOrPrivate, permission=SUPERUSER)
 openb = on_command("openb", rule=checkIfListenOrPrivate, permission=SUPERUSER)
 closeb = on_command("closeb", rule=checkIfListenOrPrivate, permission=SUPERUSER)
-unlock = on_command("unlock", rule=checkIfListenOrPrivate)
+
 
 
 @helpCmd.handle()
