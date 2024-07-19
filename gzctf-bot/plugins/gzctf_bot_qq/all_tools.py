@@ -14,6 +14,26 @@ UTC_TIMEZONE = pytz.timezone('UTC')
 UTC_PLUS_8_TIMEZONE = pytz.timezone('Asia/Shanghai')
 
 
+def parseArgs(s):
+    results = []
+    depth = 0
+    start = 0
+    in_brackets = False
+
+    for i, char in enumerate(s):
+        if char == '[':
+            if depth == 0:
+                start = i + 1  # 记录最外层'['开始的位置
+                in_brackets = True
+            depth += 1
+        elif char == ']':
+            depth -= 1
+            if depth == 0 and in_brackets:
+                results.append(s[start:i])  # 到达对应的']'，提取内容
+                in_brackets = False
+
+    return results
+
 def getGameList(name: str = None):
     """
         获取比赛列表
@@ -33,6 +53,20 @@ def getGameList(name: str = None):
                 Temp_List.append(game)
         return Temp_List
     return game_list.json()
+
+def getGameInfo(game_id: int):
+    """
+        获取比赛信息
+    """
+    global HEADERS, SESSION, GZCTF_URL
+    API_GAME_INFO_URL = GZCTF_URL + f"/api/game/{str(game_id)}"
+    getLogin()
+    try:
+        game_info = SESSION.get(url=API_GAME_INFO_URL, headers=HEADERS)
+    except Exception as e:
+        print(e)
+        game_info = {}
+    return game_info.json()
 
 
 def getLogin():
@@ -137,9 +171,37 @@ def banTeam(teamIds: list):
     getLogin()
     for team_id in teamIds:
         API_BAN_TEAM_URL = GZCTF_URL + f"/api/admin/participation/{str(team_id)}/Suspended"
-        print(API_BAN_TEAM_URL)
         try:
             a = SESSION.put(url=API_BAN_TEAM_URL)
-            print(a.text)
         except Exception as e:
             print(e)
+
+def unlockTeam(teamId: int):
+    """
+        解锁队伍
+    """
+    global HEADERS, SESSION, GZCTF_URL
+    getLogin()
+    API_UNLOCK_TEAM_URL = GZCTF_URL + f"/api/admin/teams/{str(teamId)}"
+    data = "{\"locked\":false}"
+    try:
+        unlock = SESSION.put(url=API_UNLOCK_TEAM_URL, headers=HEADERS, data=data)
+        if unlock.status_code == 200:
+            return True
+    except Exception as e:
+        print(e)
+    return False
+
+def getTeamInfoWithName(teamName: str):
+    """
+        通过队伍名获取队伍ID
+    """
+    global HEADERS, SESSION, GZCTF_URL
+    getLogin()
+    API_TEAM_URL = GZCTF_URL + f"/api/admin/teams/search?hint={teamName}"
+    try:
+        teams = SESSION.post(url=API_TEAM_URL, headers=HEADERS)
+    except Exception as e:
+        print(e)
+        teams = []
+    return teams.json()['data']

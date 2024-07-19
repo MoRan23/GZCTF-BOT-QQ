@@ -28,11 +28,14 @@ helpMsg = """=======================
 ************公共功能**************
 /help: 获取帮助
 /game: 获取比赛列表
+/unlock [队名]: 解锁队伍
 ************管理功能**************
 /open: 开启播报
 /close: 关闭播报
 /openb: 开启自动封禁
 /closeb: 关闭自动封禁
+***********************************
+参数需使用 [ ] 包裹起来！
 ======================="""
 msgList = {
     "Normal": "【公告更新】",
@@ -80,8 +83,7 @@ open = on_command("open", rule=checkIfListenOrPrivate, permission=SUPERUSER)
 close = on_command("close", rule=checkIfListenOrPrivate, permission=SUPERUSER)
 openb = on_command("openb", rule=checkIfListenOrPrivate, permission=SUPERUSER)
 closeb = on_command("closeb", rule=checkIfListenOrPrivate, permission=SUPERUSER)
-unlock = on_command("unlock", rule=to_me() & checkIfPrivate)
-get = on_command("get")
+unlock = on_command("unlock", rule=checkIfListenOrPrivate)
 
 
 @helpCmd.handle()
@@ -107,6 +109,7 @@ async def game_handle(bot, event):
             gameTimeStart = parseTime(gameInfo['start'])
             gameTimeEnd = parseTime(gameInfo['end'])
             current_time = datetime.now()
+            gameAllInfo = getGameInfo(gameInfo['id'])
             start_Time = datetime.strptime(
                 f"{gameTimeStart[0]}-{gameTimeStart[1]}-{gameTimeStart[2]} {gameTimeStart[3]}:{gameTimeStart[4]}",
                 '%Y-%m-%d %H:%M').strftime('%Y-%m-%d %H:%M')
@@ -119,7 +122,14 @@ async def game_handle(bot, event):
                 status = '进行中'
             else:
                 status = '已结束'
-            gameListMsg += f"比赛名称: {gameInfo['title']}\n开始时间: {start_Time}\n结束时间: {end_Time}\n比赛状态: {status}\n比赛链接: {CONFIG['GZCTF_URL'].rstrip('/')}/games/{gameInfo['id']}\n************************************\n"
+            gameListMsg += f"比赛名称: {gameInfo['title']}\n开始时间: {start_Time}\n结束时间: {end_Time}\n比赛状态: {status}\n"
+            if gameAllInfo['organizations']:
+                gameListMsg += "参赛组织:"
+                for org in gameAllInfo['organizations']:
+                    gameListMsg += f" {org},"
+                gameListMsg = gameListMsg.rstrip(',')
+                gameListMsg += "\n"
+            gameListMsg += f"比赛链接: {CONFIG['GZCTF_URL'].rstrip('/')}/games/{gameInfo['id']}\n************************************\n"
         gameListMsg += "======================="
         await bot.send(event, gameListMsg)
     except Exception as e:
@@ -188,19 +198,20 @@ async def closeb_handle(bot, event):
 
 
 @unlock.handle()
-async def unlock_handle(bot, event):
+async def unlock_handle(bot, event, args: Message = CommandArg()):
+    arg = args.extract_plain_text().strip()
+    args = parseArgs(arg)
+    if len(args) != 1 or not args:
+        await bot.send(event, "参数错误!\n使用方法: /unlock [队名] \n或使用 /help 查看帮助")
+        return
+    teamId = getTeamInfoWithName(args[0])[0]['id']
+    res = unlockTeam(teamId)
     try:
-        await bot.send(event, "解锁成功")
-    except Exception as e:
-        print(e)
-        await bot.send(event, "Error")
-
-@get.handle()
-async def get_handle(bot, event, args: Message = CommandArg()):
-    try:
-        a = getGameList()
-        args.extract_plain_text()
-        await bot.send(event, str(a + args[1].extract_plain_text()))
+        if res:
+            await bot.send(event, "解锁成功")
+            return
+        else:
+            await bot.send(event, "解锁失败，请检查队名是否正确")
     except Exception as e:
         print(e)
         await bot.send(event, "Error")

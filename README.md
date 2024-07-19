@@ -73,7 +73,8 @@ vim /etc/docker/daemon.json
 sudo systemctl daemon-reload && sudo systemctl restart docker
 ```
 #### 4. 安装NapCatQQ并登录  
-[NapCatQQ官网](https://napneko.github.io/zh-CN/guide/getting-started "NapCatQQ官网")
+[NapCatQQ官网](https://napneko.github.io/zh-CN/guide/getting-started "NapCatQQ官网")  
+在用户目录新建文件夹`napcat`并进入
 ```bash
 docker run -d \
 -e ACCOUNT=3766745185 \
@@ -176,7 +177,21 @@ ONEBOT_ACCESS_TOKEN=GZCTFBOT xsaFFAFSaaxa
 ```bash
 nohup python3 bot.py >bot.log 2>&1 &
 ```
-机器人的日志将会存放到`bot.log`文件中
+机器人的日志将会存放到`bot.log`文件中  
+### 更新
+#### napcatQQ更新
+保存好`napcat/config/onebot11_[你的QQ号].json`文件  
+删除容器
+```bash
+docker stop napcat && docker rm napcat
+```
+重新执行上方安装步骤  
+然后将`onebot11_[你的QQ号].json`文件复制到`napcat/config/`目录下覆盖  
+最后登录QQ  
+#### 机器人更新
+保存好`gzctf-bot/plugins/gzctf_bot_qq/config.py`和`.env`文件  
+重新拉取项目压缩包并解压  
+然后将`config.py`和`.env`文件覆盖
 ## 赞助鸣谢
 ### DKDUN
 <img src="https://cdn.moran233.xyz/https://raw.githubusercontent.com/MoRan23/moran/main/QQ%E5%9B%BE%E7%89%8720240630210148.png" alt="DKDUN 图标" width="150" height="150">
@@ -193,6 +208,10 @@ dkdun 推出 ctfer 赞助计划
 更多服务器优惠请入群查看！  
   
 ## 更新日志
+### 2024-07-19
+update: 新增功能:
+* 用户自助解锁队伍
+* 比赛列表现在会显示参赛组织
 ### 2024-07-18
 update: 新增功能:  
 * 3血播报
