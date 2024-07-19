@@ -191,7 +191,12 @@ docker stop napcat && docker rm napcat
 #### 机器人更新
 保存好`gzctf-bot/plugins/gzctf_bot_qq/config.py`和`.env`文件  
 重新拉取项目压缩包并解压  
-然后将`config.py`和`.env`文件覆盖
+然后将`config.py`和`.env`文件覆盖  
+然后进入虚拟环境重新启动bot  
+```bash
+source bot/bin/activate
+nohup python3 bot.py >bot.log 2>&1 &
+```
 ## 赞助鸣谢
 ### DKDUN
 <img src="https://cdn.moran233.xyz/https://raw.githubusercontent.com/MoRan23/moran/main/QQ%E5%9B%BE%E7%89%8720240630210148.png" alt="DKDUN 图标" width="150" height="150">
