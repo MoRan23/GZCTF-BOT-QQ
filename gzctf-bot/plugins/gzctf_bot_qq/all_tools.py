@@ -37,6 +37,7 @@ def parseArgs(s):
 
     return results
 
+
 def getGameList(name: str = None):
     """
         获取比赛列表
@@ -56,6 +57,7 @@ def getGameList(name: str = None):
                 Temp_List.append(game)
         return Temp_List
     return game_list.json()
+
 
 def getGameInfo(game_id: int):
     """
@@ -179,6 +181,7 @@ def banTeam(teamIds: list):
         except Exception as e:
             print(e)
 
+
 def unlockTeam(teamId: int):
     """
         解锁队伍
@@ -195,6 +198,7 @@ def unlockTeam(teamId: int):
         print(e)
     return False
 
+
 def getTeamInfoWithName(teamName: str):
     """
         通过队伍名获取队伍ID
@@ -202,9 +206,73 @@ def getTeamInfoWithName(teamName: str):
     global HEADERS, SESSION, GZCTF_URL
     getLogin()
     API_TEAM_URL = GZCTF_URL + f"/api/admin/teams/search?hint={teamName}"
+    allTeams = []
     try:
         teams = SESSION.post(url=API_TEAM_URL, headers=HEADERS)
     except Exception as e:
         print(e)
-        teams = []
-    return teams.json()['data']
+        teams = {}
+    for team in teams.json()['data']:
+        if team['name'] == teamName:
+            allTeams.append(team)
+    return allTeams
+
+
+def getScoreBoard(game_id: int):
+    """
+        获取排行榜
+    """
+    global HEADERS, SESSION, GZCTF_URL
+    API_RANK_URL = GZCTF_URL + f"/api/game/{str(game_id)}/scoreboard"
+    getLogin()
+    try:
+        rank = SESSION.get(url=API_RANK_URL, headers=HEADERS)
+    except Exception as e:
+        print(e)
+        rank = {}
+    return rank.json()
+
+
+def getRank(game_id: int):
+    """
+        获取总排行榜
+    """
+    rank = getScoreBoard(game_id)['items']
+    allRank = []
+    if not rank:
+        return None
+    for item in rank:
+        Rank = {'teamName': item['name'], 'score': item['score'], 'rank': item['rank']}
+        allRank.append(Rank)
+    allRank.sort(key=lambda x: x["rank"])
+    return allRank
+
+
+def getRankWithOrg(game_id: int, org: str):
+    """
+        获取组织排行榜
+    """
+    rank = getScoreBoard(game_id)['items']
+    allOrgRank = []
+    for item in rank:
+        if item.get('organization') is None:
+            return None
+        if item['organization'] == org:
+            orgRank = {'teamName': item['name'], 'score': item['score'], 'rank': item['organizationRank']}
+            allOrgRank.append(orgRank)
+    allOrgRank.sort(key=lambda x: x["rank"])
+    return allOrgRank
+
+
+def getRankWithTeamId(game_id: int, team_id: int):
+    """
+        获取队伍排名
+    """
+    rank = getScoreBoard(game_id)['items']
+    for item in rank:
+        if item['id'] == team_id:
+            teamRank = {'teamName': item['name'], 'score': item['score'], 'rank': item['rank']}
+            if item.get('organizationRank') is not None:
+                teamRank['organizationRank'] = item['organizationRank']
+            return teamRank
+    return None

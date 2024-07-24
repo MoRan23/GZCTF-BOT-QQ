@@ -1,5 +1,4 @@
 from nonebot import on_command, get_bot
-from nonebot.rule import to_me
 from nonebot.permission import SUPERUSER
 from nonebot import require
 from nonebot.adapters import Message
@@ -13,6 +12,9 @@ GAME_LIST = []
 if CONFIG.get("GAME_LIST"):
     for gameName in CONFIG.get("GAME_LIST"):
         GAME_LIST = getGameList(name=gameName)
+        if not GAME_LIST:
+            print(f"赛事 {gameName} 不存在!")
+            exit()
 else:
     GAME_LIST = getGameList()
 H = require("nonebot_plugin_apscheduler").scheduler
@@ -23,12 +25,15 @@ GAMECHEATS = {}
 for gameInfo in GAME_LIST:
     GAMENOTICE[f"gameId_{str(gameInfo['id'])}"] = getGameNotice(gameInfo['id'])
 
-
 helpMsg = """=======================
 ************公共功能**************
 /help: 获取帮助
 /game: 获取比赛列表
-/unlock [队名]: 解锁队伍
+/unlock [队名] <队伍ID>: 解锁队伍
+/rank <比赛名(默认为监听的比赛)> <组织名(默认为空)>:
+获取比赛总排行榜、组织排行榜前20名
+/trank [队伍名] <比赛名(默认为监听的比赛)> <队伍ID>:
+获取队伍排名
 ************管理功能**************
 /open: 开启播报
 /close: 关闭播报
@@ -36,6 +41,9 @@ helpMsg = """=======================
 /closeb: 关闭自动封禁
 ***********************************
 参数需使用 [ ] 包裹起来！
+队伍 ID 为队伍邀请码中两个 : 之间的数字
+以上示例 [ ] 包裹为必要参数，不可省略
+< > 包裹为非必要参数，可省略，自动填充默认值
 ======================="""
 msgList = {
     "Normal": "【公告更新】",
@@ -80,11 +88,12 @@ flag所属队伍: {flagOwner}
 helpCmd = on_command("help", rule=checkIfListenOrPrivate)
 game = on_command("game", rule=checkIfListenOrPrivate)
 unlock = on_command("unlock", rule=checkIfListenOrPrivate)
+rank = on_command("rank", rule=checkIfListenOrPrivate)
+trank = on_command("trank", rule=checkIfListenOrPrivate)
 open = on_command("open", rule=checkIfListenOrPrivate, permission=SUPERUSER)
 close = on_command("close", rule=checkIfListenOrPrivate, permission=SUPERUSER)
 openb = on_command("openb", rule=checkIfListenOrPrivate, permission=SUPERUSER)
 closeb = on_command("closeb", rule=checkIfListenOrPrivate, permission=SUPERUSER)
-
 
 
 @helpCmd.handle()
@@ -198,24 +207,299 @@ async def closeb_handle(bot, event):
         await bot.send(event, "Error")
 
 
+@rank.handle()
+async def rank_handle(bot, event, args: Message = CommandArg()):
+    global GAME_LIST
+    arg = args.extract_plain_text().strip()
+    args = parseArgs(arg)
+    if len(args) == 0:
+        if CONFIG.get("GAME_LIST"):
+            for gameName in CONFIG.get("GAME_LIST"):
+                GAME_LIST = getGameList(name=gameName)
+        else:
+            GAME_LIST = getGameList()
+        for gameInfo in GAME_LIST:
+            gameRank = getRank(gameInfo['id'])
+            if gameRank:
+                rankMsg = f"==={gameInfo['title']}(总)===\n"
+                for rank in gameRank:
+                    rankMsg += f"{str(rank['rank'])}. {rank['teamName']} || {str(rank['score'])}\n"
+                    if rank['rank'] == 20:
+                        break
+                rankMsg += "======================="
+                try:
+                    await bot.send(event, rankMsg)
+                except Exception as e:
+                    print(e)
+                    await bot.send(event, "Error")
+            else:
+                try:
+                    await bot.send(event, f"赛事 {gameInfo['title']} 暂无排行榜")
+                except Exception as e:
+                    print(e)
+                    await bot.send(event, "Error")
+    elif len(args) == 1:
+        gamelist = getGameList(name=args[0])
+        if not gamelist:
+            try:
+                await bot.send(event, f"赛事 {args[0]} 不存在")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
+        gameInfo = gamelist[0]
+        gameRank = getRank(gameInfo['id'])
+        if gameRank:
+            rankMsg = f"==={gameInfo['title']}(总)===\n"
+            for rank in gameRank:
+                rankMsg += f"{str(rank['rank'])}. {rank['teamName']} || {str(rank['score'])}\n"
+                if rank['rank'] == 20:
+                    break
+            rankMsg += "======================="
+            try:
+                await bot.send(event, rankMsg)
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+        else:
+            try:
+                await bot.send(event, f"赛事 {gameInfo['title']} 暂无排行榜")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+    elif len(args) == 2:
+        gamelist = getGameList(name=args[0])
+        if not gamelist:
+            try:
+                await bot.send(event, f"赛事 {args[0]} 不存在")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
+        gameInfo = gamelist[0]
+        gameRank = getRankWithOrg(gameInfo['id'], args[1])
+        if gameRank:
+            rankMsg = f"==={gameInfo['title']}({args[1]})===\n"
+            for rank in gameRank:
+                rankMsg += f"{str(rank['rank'])}. {rank['teamName']} || {str(rank['score'])}\n"
+                if rank['rank'] == 20:
+                    break
+            rankMsg += "======================="
+            try:
+                await bot.send(event, rankMsg)
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+        else:
+            try:
+                await bot.send(event, f"组织名错误或赛事 {gameInfo['title']} 暂无排行榜")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+    else:
+        try:
+            await bot.send(event,
+                           "参数错误!\n使用方法: /rank <比赛名(默认为监听的比赛)> <组织名(默认为空)> \n或使用 /help 查看帮助")
+        except Exception as e:
+            print(e)
+            await bot.send(event, "Error")
+
+
+@trank.handle()
+async def trank_handle(bot, event, args: Message = CommandArg()):
+    global GAME_LIST
+    arg = args.extract_plain_text().strip()
+    args = parseArgs(arg)
+    if len(args) == 1:
+        if CONFIG.get("GAME_LIST"):
+            for gameName in CONFIG.get("GAME_LIST"):
+                GAME_LIST = getGameList(name=gameName)
+        else:
+            GAME_LIST = getGameList()
+        teamInfo = getTeamInfoWithName(args[0])
+        if not teamInfo:
+            try:
+                await bot.send(event, f"队伍 {args[0]} 不存在")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
+        elif len(teamInfo) > 1:
+            try:
+                await bot.send(event, f"队伍 {args[0]} 不唯一，请添加队伍 ID 参数获取精准数据")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+        for info in teamInfo:
+            for gameInfo in GAME_LIST:
+                teamRank = getRankWithTeamId(gameInfo['id'], info['id'])
+                if teamRank:
+                    rankMsg = f"=={gameInfo['title']}==\n"
+                    rankMsg += f"队名: {args[0]}\n"
+                    if len(teamInfo) > 1:
+                        rankMsg += f"队伍ID: {info['id']}\n"
+                    rankMsg += f"总分: {str(teamRank['score'])}\n"
+                    rankMsg += f"排名: {str(teamRank['rank'])}\n"
+                    if teamRank.get('organizationRank'):
+                        rankMsg += f"组织排名: {str(teamRank['organizationRank'])}\n"
+                    rankMsg += "======================="
+                    try:
+                        await bot.send(event, rankMsg)
+                    except Exception as e:
+                        print(e)
+                        await bot.send(event, "Error")
+                else:
+                    try:
+                        await bot.send(event, f"赛事 {gameInfo['title']} 暂无队伍 {args[0]} : {info['id']} 排名")
+                    except Exception as e:
+                        print(e)
+                        await bot.send(event, "Error")
+    elif len(args) == 2:
+        gamelist = getGameList(name=args[1])
+        if not gamelist:
+            try:
+                await bot.send(event, f"赛事 {args[1]} 不存在")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
+        teamInfo = getTeamInfoWithName(args[0])
+        if not teamInfo:
+            try:
+                await bot.send(event, f"队伍 {args[0]} 不存在")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
+        elif len(teamInfo) > 1:
+            try:
+                await bot.send(event, f"队伍 {args[0]} 不唯一，请添加队伍 ID 参数获取精准数据")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+        gameInfo = gamelist[0]
+        for info in teamInfo:
+            teamRank = getRankWithTeamId(gameInfo['id'], info['id'])
+            if teamRank:
+                rankMsg = f"=={gameInfo['title']}==\n"
+                rankMsg += f"队名: {args[0]}\n"
+                if len(teamInfo) > 1:
+                    rankMsg += f"队伍ID: {info['id']}\n"
+                rankMsg += f"总分: {str(teamRank['score'])}\n"
+                rankMsg += f"排名: {str(teamRank['rank'])}\n"
+                if teamRank.get('organizationRank'):
+                    rankMsg += f"组织排名: {str(teamRank['organizationRank'])}\n"
+                rankMsg += "======================="
+                try:
+                    await bot.send(event, rankMsg)
+                except Exception as e:
+                    print(e)
+                    await bot.send(event, "Error")
+            else:
+                try:
+                    await bot.send(event, f"赛事 {gameInfo['title']} 暂无队伍 {args[0]} : {info['id']} 排名")
+                except Exception as e:
+                    print(e)
+                    await bot.send(event, "Error")
+    elif len(args) == 3:
+        gamelist = getGameList(name=args[1])
+        if not gamelist:
+            try:
+                await bot.send(event, f"赛事 {args[1]} 不存在")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
+        teamInfo = getTeamInfoWithName(args[0])
+        if not teamInfo:
+            try:
+                await bot.send(event, f"队伍 {args[0]} 不存在")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
+        gameInfo = gamelist[0]
+        teamRank = getRankWithTeamId(gameInfo['id'], int(args[2]))
+        if teamRank:
+            rankMsg = f"=={gameInfo['title']}==\n"
+            rankMsg += f"队名: {args[0]}\n"
+            rankMsg += f"总分: {str(teamRank['score'])}\n"
+            rankMsg += f"排名: {str(teamRank['rank'])}\n"
+            if teamRank.get('organizationRank'):
+                rankMsg += f"组织排名: {str(teamRank['organizationRank'])}\n"
+            rankMsg += "======================="
+            try:
+                await bot.send(event, rankMsg)
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+        else:
+            try:
+                await bot.send(event, f"赛事 {gameInfo['title']} 暂无队伍 {args[0]} : {args[2]} 排名")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+        return
+    else:
+        try:
+            await bot.send(event,
+                           "参数错误!\n使用方法: /trank [队伍名] <比赛名(默认为监听的比赛)> <队伍ID> \n或使用 /help 查看帮助")
+        except Exception as e:
+            print(e)
+            await bot.send(event, "Error")
+
+
 @unlock.handle()
 async def unlock_handle(bot, event, args: Message = CommandArg()):
     arg = args.extract_plain_text().strip()
     args = parseArgs(arg)
-    if len(args) != 1 or not args:
-        await bot.send(event, "参数错误!\n使用方法: /unlock [队名] \n或使用 /help 查看帮助")
-        return
-    teamId = getTeamInfoWithName(args[0])[0]['id']
-    res = unlockTeam(teamId)
-    try:
-        if res:
-            await bot.send(event, "解锁成功")
+    if len(args) == 1:
+        teamInfo = getTeamInfoWithName(args[0])
+        if len(teamInfo) > 1:
+            try:
+                await bot.send(event, f"队伍 {args[0]} 不唯一，请添加队伍 ID 参数")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
             return
+        teamId = teamInfo[0]['id']
+        res = unlockTeam(teamId)
+        try:
+            if res:
+                await bot.send(event, "解锁成功")
+                return
+            else:
+                await bot.send(event, "解锁失败，请检查队名是否正确")
+        except Exception as e:
+            print(e)
+            await bot.send(event, "Error")
+    elif len(args) == 2:
+        teamInfo = getTeamInfoWithName(args[0])
+        check = False
+        for info in teamInfo:
+            if info['id'] == int(args[1]):
+                check = True
+                break
+        if check:
+            res = unlockTeam(int(args[1]))
+            try:
+                if res:
+                    await bot.send(event, "解锁成功")
+                    return
+                else:
+                    await bot.send(event, "解锁失败，请检查队名与队伍 ID 是否正确")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
         else:
-            await bot.send(event, "解锁失败，请检查队名是否正确")
-    except Exception as e:
-        print(e)
-        await bot.send(event, "Error")
+            try:
+                await bot.send(event, f"解锁失败，请检查队名与队伍 ID 是否正确且对应")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+    else:
+        await bot.send(event, "参数错误!\n使用方法: /unlock [队名] <队伍ID>\n或使用 /help 查看帮助")
+        return
 
 
 @H.scheduled_job("interval", seconds=20)
