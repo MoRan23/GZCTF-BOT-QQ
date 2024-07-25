@@ -150,7 +150,9 @@ def getChallenges(game_id: int):
     except Exception as e:
         print(e)
         challenges = {}
-    return challenges.json()
+    allChallenges = challenges.json()
+    allChallenges.sort(key=lambda x: x["tag"])
+    return allChallenges
 
 
 def getChallengesInfo(game_id: int, challenge_id: int):
@@ -275,4 +277,33 @@ def getRankWithTeamId(game_id: int, team_id: int):
             if item.get('organizationRank') is not None:
                 teamRank['organizationRank'] = item['organizationRank']
             return teamRank
+    return None
+
+
+def getChallengesInfoByName(game_id: int, challenge_name: str):
+    """
+        通过题目NAME获取题目信息
+    """
+    global HEADERS, SESSION, GZCTF_URL
+    API_CHALLENGES_INFO_URL = GZCTF_URL + f"/api/game/{str(game_id)}/details"
+    challenges = getChallenges(game_id)
+    getLogin()
+    try:
+        challenges_info = SESSION.get(url=API_CHALLENGES_INFO_URL, headers=HEADERS)
+    except Exception as e:
+        print(e)
+        challenges_info = {}
+    Info = {}
+    for challenge in challenges:
+        if challenge['title'] == challenge_name:
+            Info['title'] = challenge_name
+            Info['tag'] = challenge['tag']
+            Info['isEnabled'] = challenge['isEnabled']
+            Info['score'] = challenge['score']
+            findChallenges = challenges_info.json()['challenges'][f"{Info['tag']}"]
+            for findChallenge in findChallenges:
+                if findChallenge['title'] == challenge_name:
+                    Info['solved'] = findChallenge['solved']
+                    Info['bloods'] = findChallenge['bloods']
+                    return Info
     return None
