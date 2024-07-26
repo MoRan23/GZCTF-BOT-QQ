@@ -41,6 +41,7 @@ helpMsg = """=======================
 /close: 关闭播报
 /openb: 开启自动封禁
 /closeb: 关闭自动封禁
+/qa <比赛名(默认为监听的比赛)>: 查看所有赛题
 ***********************************
 参数需使用 [ ] 包裹起来！
 队伍 ID 为队伍邀请码中两个 : 之间的数字
@@ -98,6 +99,7 @@ open = on_command("open", rule=checkIfListenOrPrivate, permission=SUPERUSER)
 close = on_command("close", rule=checkIfListenOrPrivate, permission=SUPERUSER)
 openb = on_command("openb", rule=checkIfListenOrPrivate, permission=SUPERUSER)
 closeb = on_command("closeb", rule=checkIfListenOrPrivate, permission=SUPERUSER)
+qa = on_command("qa", rule=checkIfListenOrPrivate, permission=SUPERUSER)
 
 
 @helpCmd.handle()
@@ -222,11 +224,14 @@ async def rank_handle(bot, event, args: Message = CommandArg()):
                 GAME_LIST = getGameList(name=gameName)
         else:
             GAME_LIST = getGameList()
-        rankMsg = ""
+        rankMsg = "=======================\n"
         for gameInfo in GAME_LIST:
             gameRank = getRank(gameInfo['id'])
             if gameRank:
-                rankMsg = f"==={gameInfo['title']}(总)===\n"
+                rankMsg += f"==={gameInfo['title']}(总)===\n"
+                if type(gameRank) is dict:
+                    rankMsg += f"赛事 [{gameInfo['title']}] 未开始\n"
+                    continue
                 for rank in gameRank:
                     rankMsg += f"[{str(rank['rank'])}] | [{rank['teamName']}] - {str(rank['score'])}\n"
                     if rank['rank'] == 20:
@@ -251,12 +256,16 @@ async def rank_handle(bot, event, args: Message = CommandArg()):
             return
         gameInfo = gamelist[0]
         gameRank = getRank(gameInfo['id'])
+        rankMsg = "=======================\n"
         if gameRank:
-            rankMsg = f"==={gameInfo['title']}(总)===\n"
-            for rank in gameRank:
-                rankMsg += f"[{str(rank['rank'])}] | [{rank['teamName']}] - {str(rank['score'])}\n"
-                if rank['rank'] == 20:
-                    break
+            if type(gameRank) is dict:
+                rankMsg += f"赛事 [{gameInfo['title']}] 未开始\n"
+            else:
+                rankMsg += f"==={gameInfo['title']}(总)===\n"
+                for rank in gameRank:
+                    rankMsg += f"[{str(rank['rank'])}] | [{rank['teamName']}] - {str(rank['score'])}\n"
+                    if rank['rank'] == 20:
+                        break
             rankMsg += "======================="
             try:
                 await bot.send(event, rankMsg)
@@ -280,12 +289,16 @@ async def rank_handle(bot, event, args: Message = CommandArg()):
             return
         gameInfo = gamelist[0]
         gameRank = getRankWithOrg(gameInfo['id'], args[1])
+        rankMsg = "=======================\n"
         if gameRank:
-            rankMsg = f"==={gameInfo['title']}({args[1]})===\n"
-            for rank in gameRank:
-                rankMsg += f"[{str(rank['rank'])}] | [{rank['teamName']}] - {str(rank['score'])}\n"
-                if rank['rank'] == 20:
-                    break
+            if type(gameRank) is dict:
+                rankMsg += f"赛事 [{gameInfo['title']}] 未开始\n"
+            else:
+                rankMsg += f"==={gameInfo['title']}({args[1]})===\n"
+                for rank in gameRank:
+                    rankMsg += f"[{str(rank['rank'])}] | [{rank['teamName']}] - {str(rank['score'])}\n"
+                    if rank['rank'] == 20:
+                        break
             rankMsg += "======================="
             try:
                 await bot.send(event, rankMsg)
@@ -332,9 +345,17 @@ async def trank_handle(bot, event, args: Message = CommandArg()):
             except Exception as e:
                 print(e)
                 await bot.send(event, "Error")
-        rankMsg = ""
-        for info in teamInfo:
-            for gameInfo in GAME_LIST:
+        rankMsg = "=======================\n"
+        for gameInfo in GAME_LIST:
+            gameTimeStart = parseTime(gameInfo['start'])
+            current_time = datetime.now()
+            start_Time = datetime.strptime(
+                f"{gameTimeStart[0]}-{gameTimeStart[1]}-{gameTimeStart[2]} {gameTimeStart[3]}:{gameTimeStart[4]}",
+                '%Y-%m-%d %H:%M').strftime('%Y-%m-%d %H:%M')
+            if current_time.strftime('%Y-%m-%d %H:%M') < start_Time:
+                rankMsg += f"赛事 [{gameInfo['title']}] 未开始\n"
+                continue
+            for info in teamInfo:
                 teamRank = getRankWithTeamId(gameInfo['id'], info['id'])
                 if teamRank:
                     rankMsg += f"=={gameInfo['title']}==\n"
@@ -378,6 +399,18 @@ async def trank_handle(bot, event, args: Message = CommandArg()):
                 print(e)
                 await bot.send(event, "Error")
         gameInfo = gamelist[0]
+        gameTimeStart = parseTime(gameInfo['start'])
+        current_time = datetime.now()
+        start_Time = datetime.strptime(
+            f"{gameTimeStart[0]}-{gameTimeStart[1]}-{gameTimeStart[2]} {gameTimeStart[3]}:{gameTimeStart[4]}",
+            '%Y-%m-%d %H:%M').strftime('%Y-%m-%d %H:%M')
+        if current_time.strftime('%Y-%m-%d %H:%M') < start_Time:
+            try:
+                await bot.send(event, f"赛事 [{args[1]}] 未开始")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
         rankMsg = ""
         for info in teamInfo:
             teamRank = getRankWithTeamId(gameInfo['id'], info['id'])
@@ -418,6 +451,18 @@ async def trank_handle(bot, event, args: Message = CommandArg()):
                 await bot.send(event, "Error")
             return
         gameInfo = gamelist[0]
+        gameTimeStart = parseTime(gameInfo['start'])
+        current_time = datetime.now()
+        start_Time = datetime.strptime(
+            f"{gameTimeStart[0]}-{gameTimeStart[1]}-{gameTimeStart[2]} {gameTimeStart[3]}:{gameTimeStart[4]}",
+            '%Y-%m-%d %H:%M').strftime('%Y-%m-%d %H:%M')
+        if current_time.strftime('%Y-%m-%d %H:%M') < start_Time:
+            try:
+                await bot.send(event, f"赛事 [{args[1]}] 未开始")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
         teamRank = getRankWithTeamId(gameInfo['id'], int(args[2]))
         if teamRank:
             rankMsg = f"=={gameInfo['title']}==\n"
@@ -461,6 +506,13 @@ async def unlock_handle(bot, event, args: Message = CommandArg()):
                 print(e)
                 await bot.send(event, "Error")
             return
+        elif not teamInfo:
+            try:
+                await bot.send(event, f"队伍 [{args[0]}] 不存在")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
         teamId = teamInfo[0]['id']
         res = unlockTeam(teamId)
         try:
@@ -474,6 +526,13 @@ async def unlock_handle(bot, event, args: Message = CommandArg()):
             await bot.send(event, "Error")
     elif len(args) == 2:
         teamInfo = getTeamInfoWithName(args[0])
+        if not teamInfo:
+            try:
+                await bot.send(event, f"队伍 [{args[0]}] 不存在")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
         check = False
         for info in teamInfo:
             if info['id'] == int(args[1]):
@@ -512,21 +571,30 @@ async def q_handle(bot, event, args: Message = CommandArg()):
                 GAME_LIST = getGameList(name=gameName)
         else:
             GAME_LIST = getGameList()
-        qMsg = ""
+        qMsg = "=======================\n"
         for gameInfo in GAME_LIST:
+            gameTimeStart = parseTime(gameInfo['start'])
+            current_time = datetime.now()
+            start_Time = datetime.strptime(
+                f"{gameTimeStart[0]}-{gameTimeStart[1]}-{gameTimeStart[2]} {gameTimeStart[3]}:{gameTimeStart[4]}",
+                '%Y-%m-%d %H:%M').strftime('%Y-%m-%d %H:%M')
+            if current_time.strftime('%Y-%m-%d %H:%M') < start_Time:
+                qMsg += f"赛事 [{gameInfo['title']}] 未开始\n"
+                continue
             challenges = getChallenges(gameInfo['id'])
             if challenges:
+                isEnabled = False
                 qMsg += f"==={gameInfo['title']}===\n"
                 for challenge in challenges:
                     if challenge['isEnabled']:
                         qMsg += f"[{challenge['tag']}] | [{challenge['title']}]\n"
-                qMsg += "======================="
+                        isEnabled = True
+                if not isEnabled:
+                    qMsg += "赛事暂无已开放赛题\n"
+                qMsg += "=======================\n"
             else:
-                try:
-                    await bot.send(event, f"赛事 [{gameInfo['title']}] 暂无赛题")
-                except Exception as e:
-                    print(e)
-                    await bot.send(event, "Error")
+                qMsg += f"赛事 [{gameInfo['title']}] 暂无赛题"
+        qMsg += "======================="
         try:
             await bot.send(event, qMsg)
         except Exception as e:
@@ -542,12 +610,28 @@ async def q_handle(bot, event, args: Message = CommandArg()):
                 await bot.send(event, "Error")
             return
         gameInfo = gamelist[0]
+        gameTimeStart = parseTime(gameInfo['start'])
+        current_time = datetime.now()
+        start_Time = datetime.strptime(
+            f"{gameTimeStart[0]}-{gameTimeStart[1]}-{gameTimeStart[2]} {gameTimeStart[3]}:{gameTimeStart[4]}",
+            '%Y-%m-%d %H:%M').strftime('%Y-%m-%d %H:%M')
+        if current_time.strftime('%Y-%m-%d %H:%M') < start_Time:
+            try:
+                await bot.send(event, f"赛事 [{args[0]}] 未开始")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
         challenges = getChallenges(gameInfo['id'])
+        isEnabled = False
         if challenges:
             qMsg = f"==={gameInfo['title']}===\n"
             for challenge in challenges:
                 if challenge['isEnabled']:
                     qMsg += f"[{challenge['tag']}] | [{challenge['title']}]\n"
+                    isEnabled = True
+            if not isEnabled:
+                qMsg += "赛事暂无已开放赛题\n"
             qMsg += "======================="
             try:
                 await bot.send(event, qMsg)
@@ -570,6 +654,18 @@ async def q_handle(bot, event, args: Message = CommandArg()):
                 await bot.send(event, "Error")
             return
         gameInfo = gamelist[0]
+        gameTimeStart = parseTime(gameInfo['start'])
+        current_time = datetime.now()
+        start_Time = datetime.strptime(
+            f"{gameTimeStart[0]}-{gameTimeStart[1]}-{gameTimeStart[2]} {gameTimeStart[3]}:{gameTimeStart[4]}",
+            '%Y-%m-%d %H:%M').strftime('%Y-%m-%d %H:%M')
+        if current_time.strftime('%Y-%m-%d %H:%M') < start_Time:
+            try:
+                await bot.send(event, f"赛事 [{args[0]}] 未开始")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
         challenge = getChallengesInfoByName(gameInfo['id'], args[1])
         if challenge:
             qMsg = f"==={gameInfo['title']}===\n"
@@ -592,6 +688,76 @@ async def q_handle(bot, event, args: Message = CommandArg()):
             except Exception as e:
                 print(e)
                 await bot.send(event, "Error")
+    else:
+        try:
+            await bot.send(event,
+                           "参数错误!\n使用方法: /q <比赛名(默认为监听的比赛)> <赛题名>\n或使用 /help 查看帮助")
+        except Exception as e:
+            print(e)
+            await bot.send(event, "Error")
+
+
+@qa.handle()
+async def qa_handle(bot, event, args: Message = CommandArg()):
+    global GAME_LIST
+    arg = args.extract_plain_text().strip()
+    args = parseArgs(arg)
+    if len(args) == 0:
+        if CONFIG.get("GAME_LIST"):
+            for gameName in CONFIG.get("GAME_LIST"):
+                GAME_LIST = getGameList(name=gameName)
+        else:
+            GAME_LIST = getGameList()
+        qMsg = "=======================\n"
+        for gameInfo in GAME_LIST:
+            challenges = getChallenges(gameInfo['id'])
+            if challenges:
+                qMsg += f"==={gameInfo['title']}===\n"
+                for challenge in challenges:
+                    if challenge['isEnabled']:
+                        qMsg += f"[{challenge['tag']}] | [已开放] | [{challenge['title']}]\n"
+                    else:
+                        qMsg += f"[{challenge['tag']}] | [未开放] | [{challenge['title']}]\n"
+                qMsg += "=======================\n"
+            else:
+                qMsg += f"赛事 [{gameInfo['title']}] 暂无赛题"
+        qMsg += "======================="
+        try:
+            await bot.send(event, qMsg)
+        except Exception as e:
+            print(e)
+            await bot.send(event, "Error")
+    elif len(args) == 1:
+        gamelist = getGameList(name=args[0])
+        if not gamelist:
+            try:
+                await bot.send(event, f"赛事 [{args[0]}] 不存在")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
+        gameInfo = gamelist[0]
+        challenges = getChallenges(gameInfo['id'])
+        if challenges:
+            qMsg = f"==={gameInfo['title']}===\n"
+            for challenge in challenges:
+                if challenge['isEnabled']:
+                    qMsg += f"[{challenge['tag']}] | [已开放] | [{challenge['title']}]\n"
+                else:
+                    qMsg += f"[{challenge['tag']}] | [未开放] | [{challenge['title']}]\n"
+            qMsg += "======================="
+            try:
+                await bot.send(event, qMsg)
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+    else:
+        try:
+            await bot.send(event,
+                           "参数错误!\n使用方法: /qa <比赛名(默认为监听的比赛)>\n或使用 /help 查看帮助")
+        except Exception as e:
+            print(e)
+            await bot.send(event, "Error")
 
 
 @H.scheduled_job("interval", seconds=20)
@@ -603,6 +769,8 @@ async def _():
             tmpGameInfo = getGameList()
             if tmpGameInfo != GAME_LIST:
                 GAME_LIST = tmpGameInfo
+                for gameInfo in GAME_LIST:
+                    GAMENOTICE[f"gameId_{str(gameInfo['id'])}"] = getGameNotice(gameInfo['id'])
         for gameInfo in GAME_LIST:
             tmpGameNotice = getGameNotice(gameInfo['id'])
             if tmpGameNotice != GAMENOTICE[f"gameId_{str(gameInfo['id'])}"]:

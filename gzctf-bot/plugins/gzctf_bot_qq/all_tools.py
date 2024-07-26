@@ -44,7 +44,8 @@ def getGameList(name: str = None):
     """
     global HEADERS, SESSION, GZCTF_URL
     API_GAME_LIST_URL = GZCTF_URL + "/api/game"
-    getLogin()
+    if not checkCookieExpired():
+        getLogin()
     try:
         game_list = SESSION.get(url=API_GAME_LIST_URL, headers=HEADERS)
     except Exception as e:
@@ -65,7 +66,8 @@ def getGameInfo(game_id: int):
     """
     global HEADERS, SESSION, GZCTF_URL
     API_GAME_INFO_URL = GZCTF_URL + f"/api/game/{str(game_id)}"
-    getLogin()
+    if not checkCookieExpired():
+        getLogin()
     try:
         game_info = SESSION.get(url=API_GAME_INFO_URL, headers=HEADERS)
     except Exception as e:
@@ -82,6 +84,25 @@ def getLogin():
     API_LOGIN_URL = GZCTF_URL + "/api/account/login"
     login = SESSION.post(url=API_LOGIN_URL, data=LOGINDATA, headers=HEADERS)
 
+def checkCookieExpired():
+    """
+        判断会话的cookie有没有到期
+    """
+    global SESSION
+    for cookie in SESSION.cookies:
+        if cookie is not None and cookie.name == "GZCTF_Token":
+            headers = {
+                "Cookie": f"{cookie.name}={cookie.value}"
+            }
+            API_CHECK_COOKIE_URL = GZCTF_URL + "/api/admin/config"
+            try:
+                check = SESSION.get(url=API_CHECK_COOKIE_URL, headers=headers)
+            except Exception as e:
+                print(e)
+                return False
+            if check.status_code == 200:
+                return True
+    return False
 
 def checkConfig(config: dict):
     """
@@ -114,7 +135,8 @@ def getGameNotice(game_id: int):
     """
     global HEADERS, SESSION, GZCTF_URL
     API_GAME_NOTICE_URL = GZCTF_URL + f"/api/game/{str(game_id)}/notices"
-    getLogin()
+    if not checkCookieExpired():
+        getLogin()
     try:
         game_notice = SESSION.get(url=API_GAME_NOTICE_URL, headers=HEADERS)
     except Exception as e:
@@ -129,7 +151,8 @@ def getCheatInfo(game_id: int):
     """
     global HEADERS, SESSION, GZCTF_URL
     API_CHEAT_URL = GZCTF_URL + f"/api/game/{str(game_id)}/CheatInfo"
-    getLogin()
+    if not checkCookieExpired():
+        getLogin()
     try:
         cheat_info = SESSION.get(url=API_CHEAT_URL, headers=HEADERS)
     except Exception as e:
@@ -144,14 +167,15 @@ def getChallenges(game_id: int):
     """
     global HEADERS, SESSION, GZCTF_URL
     API_CHALLENGES_URL = GZCTF_URL + f"/api/edit/games/{str(game_id)}/challenges"
-    getLogin()
+    if not checkCookieExpired():
+        getLogin()
     try:
         challenges = SESSION.get(url=API_CHALLENGES_URL, headers=HEADERS)
     except Exception as e:
         print(e)
         challenges = {}
     allChallenges = challenges.json()
-    allChallenges.sort(key=lambda x: x["tag"])
+    allChallenges.sort(key=lambda x: (x["tag"], x["isEnabled"]))
     return allChallenges
 
 
@@ -161,7 +185,8 @@ def getChallengesInfo(game_id: int, challenge_id: int):
     """
     global HEADERS, SESSION, GZCTF_URL
     API_CHALLENGES_INFO_URL = GZCTF_URL + f"/api/game/{str(game_id)}/challenges/{str(challenge_id)}"
-    getLogin()
+    if not checkCookieExpired():
+        getLogin()
     try:
         challenges_info = SESSION.get(url=API_CHALLENGES_INFO_URL, headers=HEADERS)
     except Exception as e:
@@ -175,7 +200,8 @@ def banTeam(teamIds: list):
         封禁队伍
     """
     global HEADERS, SESSION, GZCTF_URL
-    getLogin()
+    if not checkCookieExpired():
+        getLogin()
     for team_id in teamIds:
         API_BAN_TEAM_URL = GZCTF_URL + f"/api/admin/participation/{str(team_id)}/Suspended"
         try:
@@ -189,7 +215,8 @@ def unlockTeam(teamId: int):
         解锁队伍
     """
     global HEADERS, SESSION, GZCTF_URL
-    getLogin()
+    if not checkCookieExpired():
+        getLogin()
     API_UNLOCK_TEAM_URL = GZCTF_URL + f"/api/admin/teams/{str(teamId)}"
     data = "{\"locked\":false}"
     try:
@@ -206,7 +233,8 @@ def getTeamInfoWithName(teamName: str):
         通过队伍名获取队伍ID
     """
     global HEADERS, SESSION, GZCTF_URL
-    getLogin()
+    if not checkCookieExpired():
+        getLogin()
     API_TEAM_URL = GZCTF_URL + f"/api/admin/teams/search?hint={teamName}"
     allTeams = []
     try:
@@ -226,7 +254,8 @@ def getScoreBoard(game_id: int):
     """
     global HEADERS, SESSION, GZCTF_URL
     API_RANK_URL = GZCTF_URL + f"/api/game/{str(game_id)}/scoreboard"
-    getLogin()
+    if not checkCookieExpired():
+        getLogin()
     try:
         rank = SESSION.get(url=API_RANK_URL, headers=HEADERS)
     except Exception as e:
@@ -239,6 +268,8 @@ def getRank(game_id: int):
     """
         获取总排行榜
     """
+    if 'items' not in getScoreBoard(game_id):
+        return getScoreBoard(game_id)
     rank = getScoreBoard(game_id)['items']
     allRank = []
     if not rank:
@@ -287,7 +318,8 @@ def getChallengesInfoByName(game_id: int, challenge_name: str):
     global HEADERS, SESSION, GZCTF_URL
     API_CHALLENGES_INFO_URL = GZCTF_URL + f"/api/game/{str(game_id)}/details"
     challenges = getChallenges(game_id)
-    getLogin()
+    if not checkCookieExpired():
+        getLogin()
     try:
         challenges_info = SESSION.get(url=API_CHALLENGES_INFO_URL, headers=HEADERS)
     except Exception as e:
