@@ -189,6 +189,7 @@ def getChallengesInfo(game_id: int, challenge_id: int):
         getLogin()
     try:
         challenges_info = SESSION.get(url=API_CHALLENGES_INFO_URL, headers=HEADERS)
+        print(challenges_info.text)
     except Exception as e:
         print(e)
         challenges_info = {}

@@ -3,6 +3,7 @@ from nonebot.permission import SUPERUSER
 from nonebot import require
 from nonebot.adapters import Message
 from nonebot.params import CommandArg
+from datetime import datetime, timedelta, timezone
 from .rule import *
 from .all_tools import *
 from .config import Config
@@ -24,6 +25,7 @@ GAMENOTICE = {}
 GAMECHEATS = {}
 for gameInfo in GAME_LIST:
     GAMENOTICE[f"gameId_{str(gameInfo['id'])}"] = getGameNotice(gameInfo['id'])
+UTC8 = timezone(timedelta(hours=8))
 
 helpMsg = """=======================
 ************公共功能**************
@@ -60,18 +62,20 @@ msgList = {
 msgTemp_blood = """========{type}========
 比赛: {gameName}
 时间: {time}
-恭喜队伍 {team} 拿下赛题 {challenge}
+恭喜队伍 [{team}] 拿下赛题 [{challenge}]
 ======================="""
 msgTemp_all = """======{type}======
 比赛: {gameName}
 时间: {time}
-内容: {content}
+内容: 
+{content}
 ======================="""
 msgTemp_hint = """======{type}======
 比赛: {gameName}
 时间: {time}
 赛题: {challenge}
-提示: {hint}
+提示: 
+{hint}
 ======================="""
 msgTemp_new = """======{type}======
 比赛: {gameName}
@@ -124,7 +128,7 @@ async def game_handle(bot, event):
             status = ''
             gameTimeStart = parseTime(gameInfo['start'])
             gameTimeEnd = parseTime(gameInfo['end'])
-            current_time = datetime.now()
+            current_time = datetime.now(UTC8)
             gameAllInfo = getGameInfo(gameInfo['id'])
             start_Time = datetime.strptime(
                 f"{gameTimeStart[0]}-{gameTimeStart[1]}-{gameTimeStart[2]} {gameTimeStart[3]}:{gameTimeStart[4]}",
@@ -348,7 +352,7 @@ async def trank_handle(bot, event, args: Message = CommandArg()):
         rankMsg = "=======================\n"
         for gameInfo in GAME_LIST:
             gameTimeStart = parseTime(gameInfo['start'])
-            current_time = datetime.now()
+            current_time = datetime.now(UTC8)
             start_Time = datetime.strptime(
                 f"{gameTimeStart[0]}-{gameTimeStart[1]}-{gameTimeStart[2]} {gameTimeStart[3]}:{gameTimeStart[4]}",
                 '%Y-%m-%d %H:%M').strftime('%Y-%m-%d %H:%M')
@@ -400,7 +404,7 @@ async def trank_handle(bot, event, args: Message = CommandArg()):
                 await bot.send(event, "Error")
         gameInfo = gamelist[0]
         gameTimeStart = parseTime(gameInfo['start'])
-        current_time = datetime.now()
+        current_time = datetime.now(UTC8)
         start_Time = datetime.strptime(
             f"{gameTimeStart[0]}-{gameTimeStart[1]}-{gameTimeStart[2]} {gameTimeStart[3]}:{gameTimeStart[4]}",
             '%Y-%m-%d %H:%M').strftime('%Y-%m-%d %H:%M')
@@ -452,7 +456,7 @@ async def trank_handle(bot, event, args: Message = CommandArg()):
             return
         gameInfo = gamelist[0]
         gameTimeStart = parseTime(gameInfo['start'])
-        current_time = datetime.now()
+        current_time = datetime.now(UTC8)
         start_Time = datetime.strptime(
             f"{gameTimeStart[0]}-{gameTimeStart[1]}-{gameTimeStart[2]} {gameTimeStart[3]}:{gameTimeStart[4]}",
             '%Y-%m-%d %H:%M').strftime('%Y-%m-%d %H:%M')
@@ -574,7 +578,7 @@ async def q_handle(bot, event, args: Message = CommandArg()):
         qMsg = "=======================\n"
         for gameInfo in GAME_LIST:
             gameTimeStart = parseTime(gameInfo['start'])
-            current_time = datetime.now()
+            current_time = datetime.now(UTC8)
             start_Time = datetime.strptime(
                 f"{gameTimeStart[0]}-{gameTimeStart[1]}-{gameTimeStart[2]} {gameTimeStart[3]}:{gameTimeStart[4]}",
                 '%Y-%m-%d %H:%M').strftime('%Y-%m-%d %H:%M')
@@ -611,7 +615,7 @@ async def q_handle(bot, event, args: Message = CommandArg()):
             return
         gameInfo = gamelist[0]
         gameTimeStart = parseTime(gameInfo['start'])
-        current_time = datetime.now()
+        current_time = datetime.now(UTC8)
         start_Time = datetime.strptime(
             f"{gameTimeStart[0]}-{gameTimeStart[1]}-{gameTimeStart[2]} {gameTimeStart[3]}:{gameTimeStart[4]}",
             '%Y-%m-%d %H:%M').strftime('%Y-%m-%d %H:%M')
@@ -655,7 +659,7 @@ async def q_handle(bot, event, args: Message = CommandArg()):
             return
         gameInfo = gamelist[0]
         gameTimeStart = parseTime(gameInfo['start'])
-        current_time = datetime.now()
+        current_time = datetime.now(UTC8)
         start_Time = datetime.strptime(
             f"{gameTimeStart[0]}-{gameTimeStart[1]}-{gameTimeStart[2]} {gameTimeStart[3]}:{gameTimeStart[4]}",
             '%Y-%m-%d %H:%M').strftime('%Y-%m-%d %H:%M')
@@ -779,7 +783,7 @@ async def _():
                     if notice not in GAMENOTICE[f"gameId_{str(gameInfo['id'])}"]:
                         tmpNotice.append(notice)
                 GAMENOTICE[f"gameId_{str(gameInfo['id'])}"] = tmpGameNotice
-                tmpNotice.sort()
+                tmpNotice.sort(key=lambda x: x['id'])
                 for newNotice in tmpNotice:
                     msgTime = parseTime(newNotice['time'])
                     msgType = newNotice['type']
