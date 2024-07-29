@@ -14,17 +14,17 @@ start(){
 change_Source(){
     echo "正在自动换源..."
     if [ -f /etc/os-release ]; then
-      . /etc/os-release
-      VERSION_ID=$(echo "$VERSION_ID" | tr -d '"')
-      major=$(echo "$VERSION_ID" | cut -d '.' -f 1)
-      minor=$(echo "$VERSION_ID" | cut -d '.' -f 2)
-      if [ "$major" -lt 24 ] || { [ "$major" -eq 24 ] && [ "$minor" -lt 4 ]; }; then
-          sudo sed -i 's@//.*archive.ubuntu.com@//mirrors.ustc.edu.cn@g' /etc/apt/sources.list
-          echo "换源成功！"
-      else
-          sudo sed -i 's@//.*archive.ubuntu.com@//mirrors.ustc.edu.cn@g' /etc/apt/sources.list.d/ubuntu.sources
-          echo "换源成功！"
-      fi
+    . /etc/os-release
+    VERSION_ID=$(echo "$VERSION_ID" | tr -d '"')
+    major=$(echo "$VERSION_ID" | cut -d '.' -f 1)
+    minor=$(echo "$VERSION_ID" | cut -d '.' -f 2)
+    if [ "$major" -lt 24 ] || { [ "$major" -eq 24 ] && [ "$minor" -lt 4 ]; }; then
+        sudo sed -i 's@//.*archive.ubuntu.com@//mirrors.ustc.edu.cn@g' /etc/apt/sources.list
+        echo "换源成功！"
+    else
+        sudo sed -i 's@//.*archive.ubuntu.com@//mirrors.ustc.edu.cn@g' /etc/apt/sources.list.d/ubuntu.sources
+        echo "换源成功！"
+    fi
     else
         echo "/etc/os-release 文件不存在，无法确定系统版本信息。"
         echo "换源失败，请手动换源！"
