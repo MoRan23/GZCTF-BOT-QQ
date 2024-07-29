@@ -106,7 +106,7 @@ public_ip=$(curl -s https://api.ipify.org)
 docker run -d \
 -e ACCOUNT=3766745185 \
 -e WSR_ENABLE=true \
--e WS_URLS='["ws://'+"$public_ip"+':8988/onebot/v11/ws/"]' \
+-e WS_URLS='["ws://'"$public_ip"':8988/onebot/v11/ws/"]' \
 -v ./napcat/app:/usr/src/app/napcat \
 -v ./napcat/config:/usr/src/app/napcat/config \
 -p 6099:6099 \
@@ -114,10 +114,13 @@ docker run -d \
 --restart=always \
 mlikiowa/napcat-docker:latest
 
-echo "请扫码登录QQ\n或者通过 napcat/app/qrcode.png 扫码登录\n或者打开网站 http://$public_ip:6099/webui 扫码登录\n"
+echo "请扫码登录QQ"
+echo "或者通过 napcat/app/qrcode.png 扫码登录"
+echo "或者打开网站 http://$public_ip:6099/webui 扫码登录"
+docker logs --tail 23 napcat
 
 while true; do
-    docker logs napcat
+    docker logs --tail 23 napcat
     read -p "是否登录成功(y/n): " Y
 
     case $Y in
