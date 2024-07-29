@@ -117,10 +117,10 @@ mlikiowa/napcat-docker:latest
 echo "请扫码登录QQ"
 echo "或者通过 napcat/app/qrcode.png 扫码登录"
 echo "或者打开网站 http://$public_ip:6099/webui 扫码登录"
-docker logs --tail 23 napcat
+docker logs napcat
 
 while true; do
-    docker logs --tail 23 napcat
+    docker logs napcat
     read -p "是否登录成功(y/n): " Y
 
     case $Y in
