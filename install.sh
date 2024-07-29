@@ -34,7 +34,7 @@ change_Source(){
 # shellcheck disable=SC2162
 read -p "输入docker镜像源（默认内置源）: " source_add
 if [ -z "$source_add" ]; then
-    source_add="https://hub.hk1.dkdun.com/"
+    source_add="https://hub.huhstsec.top/"
 fi
 echo "使用的镜像源是: $source_add"
 wget -O daemon.json https://cdn.moran233.xyz/https://raw.githubusercontent.com/MoRan23/GZCTF-Auto/main/config-auto/docker/daemon.json
@@ -92,11 +92,12 @@ sudo systemctl daemon-reload && sudo systemctl restart docker
 cd GZCTF-BOT-QQ || exit
 sudo apt install -y software-properties-common
 sudo DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:deadsnakes/ppa
-apt -y update
-apt DEBIAN_FRONTEND=noninteractive install -y --no-install-recommends python3.10
-sudo DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends python3.10-venv libgbm1 libasound2
+sudo apt -y update
+sudo DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends python3.10 python3.10-venv libgbm1 libasound2
 python3 -m venv bot
 source bot/bin/activate
+pip install -i https://mirrors.ustc.edu.cn/pypi/web/simple pip -U
+pip config set global.index-url https://mirrors.ustc.edu.cn/pypi/web/simple
 pip install -i https://mirrors.ustc.edu.cn/pypi/web/simple -r requirements.txt
 nb plugin install nonebot_plugin_apscheduler
 
