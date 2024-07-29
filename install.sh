@@ -91,11 +91,10 @@ sudo systemctl daemon-reload && sudo systemctl restart docker
 
 cd GZCTF-BOT-QQ || exit
 sudo apt install -y software-properties-common
-sudo add-apt-repository ppa:deadsnakes/ppa
+sudo DEBIAN_FRONTEND=noninteractive add-apt-repository -y --no-install-recommends ppa:deadsnakes/ppa
 apt -y update
-apt install -y python3.10
-sudo apt install -y python3.10-venv
-sudo apt install -y libgbm1 libasound2
+apt DEBIAN_FRONTEND=noninteractive install -y --no-install-recommends python3.10
+sudo DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends python3.10-venv libgbm1 libasound2
 python3 -m venv bot
 source bot/bin/activate
 pip install -i https://mirrors.ustc.edu.cn/pypi/web/simple -r requirements.txt
