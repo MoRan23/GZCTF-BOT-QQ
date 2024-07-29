@@ -91,7 +91,7 @@ sudo systemctl daemon-reload && sudo systemctl restart docker
 
 cd GZCTF-BOT-QQ || exit
 sudo apt install -y software-properties-common
-sudo DEBIAN_FRONTEND=noninteractive add-apt-repository -y --no-install-recommends ppa:deadsnakes/ppa
+sudo DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:deadsnakes/ppa
 apt -y update
 apt DEBIAN_FRONTEND=noninteractive install -y --no-install-recommends python3.10
 sudo DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends python3.10-venv libgbm1 libasound2
