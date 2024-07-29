@@ -29,7 +29,9 @@ GZCTF对接的qq机器人，基于NapCat+Nonebot框架
 ## 使用方法
 环境: Ubuntu 22.04  
 ### 使用一键脚本:  
-```curl -sSL https://cdn.moran233.xyz/https://raw.githubusercontent.com/MoRan23/GZCTF-BOT-QQ/main/install.sh | bash```
+```bash
+curl -sSL https://cdn.moran233.xyz/https://raw.githubusercontent.com/MoRan23/GZCTF-BOT-QQ/main/install.sh | bash
+```
 ### 手动安装:
 下载项目并解压，进入项目文件夹
 #### 1. 安装python3.10
