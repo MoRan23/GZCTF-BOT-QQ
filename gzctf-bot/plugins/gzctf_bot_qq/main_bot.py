@@ -3,6 +3,7 @@ from nonebot.permission import SUPERUSER
 from nonebot import require
 from nonebot.adapters import Message
 from nonebot.params import CommandArg
+from nonebot.adapters.onebot.v11 import MessageSegment
 from datetime import datetime, timedelta, timezone
 from .rule import *
 from .all_tools import *
@@ -26,6 +27,7 @@ GAMECHEATS = {}
 for gameInfo in GAME_LIST:
     GAMENOTICE[f"gameId_{str(gameInfo['id'])}"] = getGameNotice(gameInfo['id'])
 UTC8 = timezone(timedelta(hours=8))
+GZCTF_URL = CONFIG["GZCTF_URL"].rstrip('/')
 
 helpMsg = """=======================
 ************公共功能**************
@@ -38,17 +40,26 @@ helpMsg = """=======================
 获取队伍排名
 /q <比赛名(默认为监听的比赛)> <赛题名(默认为空)>:
 获取赛题信息(无参数获取赛题列表)
+/team [队伍名]: 获取队伍信息
 ************管理功能**************
 /open: 开启播报
 /close: 关闭播报
 /openb: 开启自动封禁
 /closeb: 关闭自动封禁
 /qa <比赛名(默认为监听的比赛)>: 查看所有赛题
+/ban [name=队伍名/id=队伍ID] <比赛名>: 
+封禁队伍(比赛名为空将会在所有开放赛事封禁)
+/resetpwd [用户名]: 重置用户密码
+/openq [比赛名] [赛题]: 开放赛题
+/closeq [比赛名] [赛题]: 关闭赛题
+/addnotice [比赛名] [公告]: 添加公告
+/addhint [比赛名] [赛题] [提示]: 添加提示
 ***********************************
 参数需使用 [ ] 包裹起来！
 队伍 ID 为队伍邀请码中两个 : 之间的数字
 以上示例 [ ] 包裹为必要参数，不可省略
 < > 包裹为非必要参数，可省略，自动填充默认值
+如有特殊表明需要添加如 name= 或 id= 的参数
 所有功能均可群聊和私聊使用，私聊需加好友
 ======================="""
 msgList = {
@@ -99,11 +110,18 @@ unlock = on_command("unlock", rule=checkIfListenOrPrivate)
 rank = on_command("rank", rule=checkIfListenOrPrivate)
 trank = on_command("trank", rule=checkIfListenOrPrivate)
 q = on_command("q", rule=checkIfListenOrPrivate)
+team = on_command("team", rule=checkIfListenOrPrivate)
 open = on_command("open", rule=checkIfListenOrPrivate, permission=SUPERUSER)
 close = on_command("close", rule=checkIfListenOrPrivate, permission=SUPERUSER)
 openb = on_command("openb", rule=checkIfListenOrPrivate, permission=SUPERUSER)
 closeb = on_command("closeb", rule=checkIfListenOrPrivate, permission=SUPERUSER)
 qa = on_command("qa", rule=checkIfListenOrPrivate, permission=SUPERUSER)
+ban = on_command("ban", rule=checkIfListenOrPrivate, permission=SUPERUSER)
+resetpwd = on_command("resetpwd", rule=checkIfListenOrPrivate, permission=SUPERUSER)
+openq = on_command("openq", rule=checkIfListenOrPrivate, permission=SUPERUSER)
+closeq = on_command("closeq", rule=checkIfListenOrPrivate, permission=SUPERUSER)
+addnotice = on_command("addnotice", rule=checkIfListenOrPrivate, permission=SUPERUSER)
+addhint = on_command("addhint", rule=checkIfListenOrPrivate, permission=SUPERUSER)
 
 
 @helpCmd.handle()
@@ -505,7 +523,12 @@ async def unlock_handle(bot, event, args: Message = CommandArg()):
         teamInfo = getTeamInfoWithName(args[0])
         if len(teamInfo) > 1:
             try:
-                await bot.send(event, f"队伍 [{args[0]}] 不唯一，请添加队伍 ID 参数")
+                emsg = f"=======================\n队伍 [{args[0]}] 不唯一，请添加队伍 ID 参数:\n"
+                for team in teamInfo:
+                    emsg += f"队伍ID: {team['id']}\n队长: {team['members'][0]['userName']}\n"
+                    emsg += "-----------------------\n"
+                emsg += "======================="
+                await bot.send(event, emsg)
             except Exception as e:
                 print(e)
                 await bot.send(event, "Error")
@@ -561,6 +584,168 @@ async def unlock_handle(bot, event, args: Message = CommandArg()):
                 await bot.send(event, "Error")
     else:
         await bot.send(event, "参数错误!\n使用方法: /unlock [队名] <队伍ID>\n或使用 /help 查看帮助")
+        return
+
+
+@ban.handle()
+async def ban_handle(bot, event, args: Message = CommandArg()):
+    arg = args.extract_plain_text().strip()
+    args = parseArgs(arg)
+    global GAME_LIST
+    if not CONFIG.get("GAME_LIST"):
+        GAME_LIST = getGameList()
+    teamIds = []
+    if len(args) == 1:
+        teamId, teamName = parseNameOrId(args[0])
+        if teamId:
+            teams = getTeamInfoWithId(teamId)
+            if not teams:
+                try:
+                    await bot.send(event, f"队伍ID [{teamId}] 不存在")
+                except Exception as e:
+                    print(e)
+                    await bot.send(event, "Error")
+                return
+            for team in teams:
+                if team['id'] == int(teamId):
+                    for gameInfo in GAME_LIST:
+                        allTeams = getTeamInfoWithGameId(gameInfo['id'])
+                        for t in allTeams:
+                            if t['team']['id'] == int(teamId):
+                                teamIds.append(t['id'])
+                                break
+                    break
+                else:
+                    continue
+            res = banTeam(teamIds)
+            try:
+                if res:
+                    await bot.send(event, "封禁成功")
+                    return
+                else:
+                    await bot.send(event, "封禁失败，请检查队伍 ID 是否正确")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+        elif teamName:
+            teamInfo = getTeamInfoWithName(teamName)
+            if len(teamInfo) > 1:
+                try:
+                    emsg = f"=======================\n队伍 [{teamName}] 不唯一，请使用队伍 ID:\n"
+                    for team in teamInfo:
+                        emsg += f"队伍ID: {team['id']}\n队长: {team['members'][0]['userName']}\n"
+                        emsg += "-----------------------\n"
+                    emsg += "======================="
+                    await bot.send(event, emsg)
+                except Exception as e:
+                    print(e)
+                    await bot.send(event, "Error")
+                return
+            elif not teamInfo:
+                try:
+                    await bot.send(event, f"队伍 [{teamName}] 不存在")
+                except Exception as e:
+                    print(e)
+                    await bot.send(event, "Error")
+                return
+            for gameInfo in GAME_LIST:
+                allTeams = getTeamInfoWithGameId(gameInfo['id'])
+                for team in allTeams:
+                    if team['team']['name'] == teamName:
+                        teamIds.append(team['id'])
+                        break
+            res = banTeam(teamIds)
+            try:
+                if res:
+                    await bot.send(event, "封禁成功")
+                    return
+                else:
+                    await bot.send(event, "封禁失败，请检查队名是否正确")
+                    return
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+        else:
+            await bot.send(event, "参数错误!\n使用方法: /ban [name=队伍名/id=队伍ID] <比赛名>\n或使用 /help 查看帮助")
+            return
+    elif len(args) == 2:
+        gamelist = getGameList(name=args[1])
+        if not gamelist:
+            try:
+                await bot.send(event, f"赛事 [{args[1]}] 不存在")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
+        teamId, teamName = parseNameOrId(args[0])
+        if teamId:
+            teams = getTeamInfoWithId(teamId)
+            if not teams:
+                try:
+                    await bot.send(event, f"队伍ID [{teamId}] 不存在")
+                except Exception as e:
+                    print(e)
+                    await bot.send(event, "Error")
+                return
+            for team in teams:
+                if team['id'] == int(teamId):
+                    for gameInfo in gamelist:
+                        allTeams = getTeamInfoWithGameId(gameInfo['id'])
+                        for t in allTeams:
+                            if t['team']['id'] == int(teamId):
+                                teamIds.append(t['id'])
+                                break
+                    break
+                else:
+                    continue
+            res = banTeam(teamIds)
+            try:
+                if res:
+                    await bot.send(event, "封禁成功")
+                    return
+                else:
+                    await bot.send(event, "封禁失败，请检查队伍 ID 是否正确")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+        elif teamName:
+            teamInfo = getTeamInfoWithName(teamName)
+            if len(teamInfo) > 1:
+                try:
+                    await bot.send(event, f"队伍 [{teamName}] 不唯一，请使用队伍 ID")
+                except Exception as e:
+                    print(e)
+                    await bot.send(event, "Error")
+                return
+            elif not teamInfo:
+                try:
+                    await bot.send(event, f"队伍 [{teamName}] 不存在")
+                except Exception as e:
+                    print(e)
+                    await bot.send(event, "Error")
+                return
+            for gameInfo in gamelist:
+                allTeams = getTeamInfoWithGameId(gameInfo['id'])
+                for team in allTeams:
+                    if team['team']['name'] == teamName:
+                        teamIds.append(team['id'])
+                        break
+            res = banTeam(teamIds)
+            try:
+                if res:
+                    await bot.send(event, "封禁成功")
+                    return
+                else:
+                    await bot.send(event, "封禁失败，请检查队名是否正确")
+                    return
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+        else:
+            await bot.send(event, "参数错误!\n使用方法: /ban [name=队伍名/id=队伍ID] <比赛名>\n或使用 /help 查看帮助")
+            return
+    else:
+        await bot.send(event, "参数错误!\n使用方法: /ban [name=队伍名/id=队伍ID] <比赛名>\n或使用 /help 查看帮助")
         return
 
 
@@ -763,6 +948,251 @@ async def qa_handle(bot, event, args: Message = CommandArg()):
             print(e)
             await bot.send(event, "Error")
 
+
+@resetpwd.handle()
+async def resetpwd_handle(bot, event, args: Message = CommandArg()):
+    arg = args.extract_plain_text().strip()
+    args = parseArgs(arg)
+    if len(args) == 1:
+        res = resetPwd(args[0])
+        if res:
+            try:
+                await bot.send(event, f"重置成功!\n新密码: \n{res}")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+        else:
+            try:
+                await bot.send(event, "重置失败，请检查用户名是否正确")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+        return
+    else:
+        await bot.send(event, "参数错误!\n使用方法: /resetpwd [用户名]\n或使用 /help 查看帮助")
+        return
+
+
+@openq.handle()
+async def openq_handle(bot, event, args: Message = CommandArg()):
+    global GAME_LIST
+    arg = args.extract_plain_text().strip()
+    args = parseArgs(arg)
+    if not CONFIG.get("GAME_LIST"):
+        GAME_LIST = getGameList()
+    if len(args) == 2:
+        gameId = 0
+        for gameInfo in GAME_LIST:
+            if gameInfo['title'] == args[0]:
+                gameId = gameInfo['id']
+                break
+        if gameId == 0:
+            try:
+                await bot.send(event, f"赛事 [{args[0]}] 不存在")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
+        challenges = getChallenges(gameId)
+        for challenge in challenges:
+            if challenge['title'] == args[1]:
+                res = openOrCloseChallenge(gameId, challenge['id'], True)
+                if res:
+                    try:
+                        await bot.send(event, f"开放赛事 [{args[0]}] 赛题 [{args[1]}] 成功!")
+                    except Exception as e:
+                        print(e)
+                        await bot.send(event, "Error")
+                else:
+                    try:
+                        await bot.send(event, "开放失败，请检查赛事名或赛题名是否正确, 以及赛题是否在赛事中")
+                    except Exception as e:
+                        print(e)
+                        await bot.send(event, "Error")
+                return
+        try:
+            await bot.send(event, f"赛事 [{args[0]}] 中无赛题 [{args[1]}]")
+        except Exception as e:
+            print(e)
+            await bot.send(event, "Error")
+        return
+    else:
+        await bot.send(event, "参数错误!\n使用方法: /openq [比赛名] [赛题名]\n或使用 /help 查看帮助")
+        return
+
+
+@closeq.handle()
+async def closeq_handle(bot, event, args: Message = CommandArg()):
+    global GAME_LIST
+    arg = args.extract_plain_text().strip()
+    args = parseArgs(arg)
+    if not CONFIG.get("GAME_LIST"):
+        GAME_LIST = getGameList()
+    if len(args) == 2:
+        gameId = 0
+        for gameInfo in GAME_LIST:
+            if gameInfo['title'] == args[0]:
+                gameId = gameInfo['id']
+                break
+        if gameId == 0:
+            try:
+                await bot.send(event, f"赛事 [{args[0]}] 不存在")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
+        challenges = getChallenges(gameId)
+        for challenge in challenges:
+            if challenge['title'] == args[1]:
+                res = openOrCloseChallenge(gameId, challenge['id'], False)
+                if res:
+                    try:
+                        await bot.send(event, f"关闭赛事 [{args[0]}] 赛题 [{args[1]}] 成功!")
+                    except Exception as e:
+                        print(e)
+                        await bot.send(event, "Error")
+                else:
+                    try:
+                        await bot.send(event, "关闭失败，请检查赛事名或赛题名是否正确, 以及赛题是否在赛事中")
+                    except Exception as e:
+                        print(e)
+                        await bot.send(event, "Error")
+                return
+        try:
+            await bot.send(event, f"赛事 [{args[0]}] 中无赛题 [{args[1]}]")
+        except Exception as e:
+            print(e)
+            await bot.send(event, "Error")
+        return
+    else:
+        await bot.send(event, "参数错误!\n使用方法: /closeq [比赛名] [赛题名]\n或使用 /help 查看帮助")
+        return
+
+@addnotice.handle()
+async def addnotice_handle(bot, event, args: Message = CommandArg()):
+    global GAME_LIST
+    arg = args.extract_plain_text().strip()
+    args = parseArgs(arg)
+    if not CONFIG.get("GAME_LIST"):
+        GAME_LIST = getGameList()
+    if len(args) == 2:
+        gameId = 0
+        for gameInfo in GAME_LIST:
+            if gameInfo['title'] == args[0]:
+                gameId = gameInfo['id']
+                break
+        if gameId == 0:
+            try:
+                await bot.send(event, f"赛事 [{args[0]}] 不存在")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
+        res = addNotice(gameId, args[1])
+        if res:
+            try:
+                await bot.send(event, f"添加赛事 [{args[0]}] 公告成功!")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+        else:
+            try:
+                await bot.send(event, "添加失败，请检查赛事名是否正确")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+        return
+    else:
+        await bot.send(event, "参数错误!\n使用方法: /addnotice [比赛名] [公告内容]\n或使用 /help 查看帮助")
+        return
+
+@addhint.handle()
+async def addhint_handle(bot, event, args: Message = CommandArg()):
+    global GAME_LIST
+    arg = args.extract_plain_text().strip()
+    args = parseArgs(arg)
+    if not CONFIG.get("GAME_LIST"):
+        GAME_LIST = getGameList()
+    if len(args) == 3:
+        gameId = 0
+        for gameInfo in GAME_LIST:
+            if gameInfo['title'] == args[0]:
+                gameId = gameInfo['id']
+                break
+        if gameId == 0:
+            try:
+                await bot.send(event, f"赛事 [{args[0]}] 不存在")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
+        challenges = getChallenges(gameId)
+        for challenge in challenges:
+            if challenge['title'] == args[1]:
+                res = addHint(gameId, challenge['id'], args[2])
+                if res:
+                    try:
+                        await bot.send(event, f"添加赛事 [{args[0]}] 赛题 [{args[1]}] 提示成功!")
+                    except Exception as e:
+                        print(e)
+                        await bot.send(event, "Error")
+                else:
+                    try:
+                        await bot.send(event, "添加失败，请检查赛事名或赛题名是否正确, 以及赛题是否在赛事中")
+                    except Exception as e:
+                        print(e)
+                        await bot.send(event, "Error")
+                return
+        try:
+            await bot.send(event, f"赛事 [{args[0]}] 中无赛题 [{args[1]}]")
+        except Exception as e:
+            print(e)
+            await bot.send(event, "Error")
+        return
+    else:
+        await bot.send(event, "参数错误!\n使用方法: /addhint [比赛名] [赛题名] [提示内容]\n或使用 /help 查看帮助")
+        return
+
+
+@team.handle()
+async def team_handle(bot, event, args: Message = CommandArg()):
+    global GZCTF_URL
+    arg = args.extract_plain_text().strip()
+    args = parseArgs(arg)
+    if len(args) == 1:
+        teamInfo = getTeamInfoWithName(args[0])
+        if not teamInfo:
+            try:
+                await bot.send(event, f"队伍 [{args[0]}] 不存在")
+            except Exception as e:
+                print(e)
+                await bot.send(event, "Error")
+            return
+        teamMsg = "=======================\n"
+        for info in teamInfo:
+            teamMsg += f"==={info['name']}===\n"
+            if info['avatar']:
+                teamMsg += MessageSegment.image(GZCTF_URL+info['avatar'])
+            teamMsg += f"签名: {info['bio']}\n"
+            teamMsg += "-----------------------\n"
+            for member in info['members']:
+                if member['avatar']:
+                    teamMsg += MessageSegment.image(GZCTF_URL+member['avatar'])
+                if member['captain']:
+                    teamMsg += f"队长: {member['userName']}\n"
+                else:
+                    teamMsg += f"成员: {member['userName']}\n"
+                teamMsg += f"签名: {member['bio']}\n"
+                teamMsg += "-----------------------\n"
+            teamMsg += f"=======================\n"
+        try:
+            await bot.send(event, teamMsg)
+        except Exception as e:
+            print(e)
+            await bot.send(event, "Error")
+    else:
+        await bot.send(event, "参数错误!\n使用方法: /team [队伍名]\n或使用 /help 查看帮助")
+        return
 
 @H.scheduled_job("interval", seconds=20)
 async def _():

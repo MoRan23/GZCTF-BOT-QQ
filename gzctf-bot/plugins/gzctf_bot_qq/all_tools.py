@@ -1,6 +1,7 @@
 import requests
 import json
 import pytz
+import re
 from datetime import datetime
 from nonebot import get_plugin_config
 from .config import Config
@@ -36,6 +37,29 @@ def parseArgs(s):
                 in_brackets = False
 
     return results
+
+
+def parseNameOrId(s):
+    """
+        解析队伍名或队伍ID
+    """
+    id_pattern = r'^id=([^\s&]+)'
+    name_pattern = r'^name=([^\s&]+)'
+
+    id_match = re.search(id_pattern, s)
+    name_match = re.search(name_pattern, s)
+
+    if id_match:
+        id_value = id_match.group(1)
+    else:
+        id_value = None
+
+    if name_match:
+        name_value = name_match.group(1)
+    else:
+        name_value = None
+
+    return id_value, name_value
 
 
 def getGameList(name: str = None):
@@ -84,6 +108,7 @@ def getLogin():
     API_LOGIN_URL = GZCTF_URL + "/api/account/login"
     login = SESSION.post(url=API_LOGIN_URL, data=LOGINDATA, headers=HEADERS)
 
+
 def checkCookieExpired():
     """
         判断会话的cookie有没有到期
@@ -103,6 +128,7 @@ def checkCookieExpired():
             if check.status_code == 200:
                 return True
     return False
+
 
 def checkConfig(config: dict):
     """
@@ -196,6 +222,27 @@ def getChallengesInfo(game_id: int, challenge_id: int):
     return challenges_info.json()
 
 
+def openOrCloseChallenge(game_id: int, challenge_id: int, isEnable: bool):
+    """
+        开放/关闭题目
+    """
+    global HEADERS, SESSION, GZCTF_URL
+    if not checkCookieExpired():
+        getLogin()
+    API_OPEN_CHALLENGE_URL = GZCTF_URL + f"/api/edit/games/{str(game_id)}/challenges/{str(challenge_id)}"
+    if isEnable:
+        data = "{\"isEnabled\":true}"
+    else:
+        data = "{\"isEnabled\":false}"
+    try:
+        oc = SESSION.put(url=API_OPEN_CHALLENGE_URL, headers=HEADERS, data=data)
+        if oc.status_code == 200:
+            return True
+    except Exception as e:
+        print(e)
+    return False
+
+
 def banTeam(teamIds: list):
     """
         封禁队伍
@@ -207,8 +254,11 @@ def banTeam(teamIds: list):
         API_BAN_TEAM_URL = GZCTF_URL + f"/api/admin/participation/{str(team_id)}/Suspended"
         try:
             a = SESSION.put(url=API_BAN_TEAM_URL)
+            if a.status_code != 200:
+                return False
         except Exception as e:
             print(e)
+    return True
 
 
 def unlockTeam(teamId: int):
@@ -247,6 +297,42 @@ def getTeamInfoWithName(teamName: str):
         if team['name'] == teamName:
             allTeams.append(team)
     return allTeams
+
+
+def getTeamInfoWithId(teamId: str):
+    """
+        通过队伍Id获取队伍Info
+    """
+    global HEADERS, SESSION, GZCTF_URL
+    if not checkCookieExpired():
+        getLogin()
+    API_TEAM_URL = GZCTF_URL + f"/api/admin/teams/search?hint={teamId}"
+    allTeams = []
+    try:
+        teams = SESSION.post(url=API_TEAM_URL, headers=HEADERS)
+    except Exception as e:
+        print(e)
+        teams = {}
+    for team in teams.json()['data']:
+        if team['id'] == int(teamId):
+            allTeams.append(team)
+    return allTeams
+
+
+def getTeamInfoWithGameId(game_Id: int):
+    """
+        通过gameID获取队伍信息
+    """
+    global HEADERS, SESSION, GZCTF_URL
+    if not checkCookieExpired():
+        getLogin()
+    API_TEAM_URL = GZCTF_URL + f"/api/game/{str(game_Id)}/participations"
+    try:
+        team = SESSION.get(url=API_TEAM_URL, headers=HEADERS)
+    except Exception as e:
+        print(e)
+        team = []
+    return team.json()
 
 
 def getScoreBoard(game_id: int):
@@ -340,3 +426,81 @@ def getChallengesInfoByName(game_id: int, challenge_name: str):
                     Info['bloods'] = findChallenge['bloods']
                     return Info
     return None
+
+
+def getUserWithName(userName: str):
+    """
+        通过用户名获取用户信息
+    """
+    global HEADERS, SESSION, GZCTF_URL
+    if not checkCookieExpired():
+        getLogin()
+    API_USER_URL = GZCTF_URL + f"/api/admin/Users/Search?hint={userName}"
+    try:
+        user = SESSION.post(url=API_USER_URL, headers=HEADERS)
+    except Exception as e:
+        print(e)
+        user = {}
+    for item in user.json()['data']:
+        if item['userName'] == userName:
+            return item
+    return False
+
+
+def resetPwd(userName: str):
+    """
+        重置密码
+    """
+    global HEADERS, SESSION, GZCTF_URL
+    if not checkCookieExpired():
+        getLogin()
+    if getUserWithName(userName):
+        userId = getUserWithName(userName)['id']
+    else:
+        return False
+    API_RESET_PWD_URL = GZCTF_URL + f"/api/admin/Users/{userId}/Password"
+    try:
+        reset = SESSION.delete(url=API_RESET_PWD_URL, headers=HEADERS)
+        if reset.status_code == 200:
+            return reset.text.strip('"')
+    except Exception as e:
+        print(e)
+    return False
+
+def addNotice(gameId: int, notice: str):
+    """
+        添加公告
+    """
+    global HEADERS, SESSION, GZCTF_URL
+    if not checkCookieExpired():
+        getLogin()
+    API_ADD_NOTICE_URL = GZCTF_URL + f"/api/edit/games/{str(gameId)}/notices"
+    data = "{\"content\":\"" + notice + "\"}"
+    try:
+        add = SESSION.post(url=API_ADD_NOTICE_URL, headers=HEADERS, data=data)
+        if add.status_code == 200:
+            return True
+    except Exception as e:
+        print(e)
+    return False
+
+def addHint(gameId: int, challengeId: int, hint: str):
+    """
+        添加提示
+    """
+    global HEADERS, SESSION, GZCTF_URL
+    if not checkCookieExpired():
+        getLogin()
+    API_ADD_HINT_URL = GZCTF_URL + f"/api/edit/games/{str(gameId)}/challenges/{str(challengeId)}"
+    data = SESSION.get(url=API_ADD_HINT_URL, headers=HEADERS)
+    if data.status_code != 200:
+        return False
+    datas = data.json()
+    datas['hints'].append(hint)
+    try:
+        add = SESSION.put(url=API_ADD_HINT_URL, headers=HEADERS, json=datas)
+        if add.status_code == 200:
+            return True
+    except Exception as e:
+        print(e)
+    return False
