@@ -10,7 +10,6 @@ nonebot.init(apscheduler_config={
 driver = nonebot.get_driver()
 driver.register_adapter(OnebotAdapter)
 
-nonebot.load_builtin_plugins("echo")
 nonebot.load_plugin("nonebot_plugin_apscheduler")
 nonebot.load_plugins("gzctf-bot/plugins")
 

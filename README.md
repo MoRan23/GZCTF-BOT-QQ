@@ -32,7 +32,66 @@ GZCTF对接的qq机器人，基于NapCat+Nonebot框架
 ```bash
 wget -O install.sh https://cdn.moran233.xyz/https://raw.githubusercontent.com/MoRan23/GZCTF-BOT-QQ/main/install.sh && chmod +x install.sh && ./install.sh
 ```
+### docker compose安装机器人
+```yaml
+version: "3.7"
+services:
+  napcat:
+    image: mlikiowa/napcat-docker:latest
+    restart: always
+    ports:
+      - "6099:6099"
+    environment:
+      - "ACCOUNT=your_account"  #机器人的qq号
+      - "WSR_ENABLE=true"
+      - "WS_URLS=\"ws://bot:8988/onebot/v11/ws/\""
+    volumes:
+      - "./napcat/app:/usr/src/app/napcat"
+      - "./napcat/config:/usr/src/app/napcat/config"
+    depends_on:
+      - bot
+
+  bot:
+    image: registry.cn-hangzhou.aliyuncs.com/moran233/nn:GZBOT
+    restart: always
+    environment:
+      - "SEND_LIST=123456,1234567"  #监听qq群号
+      - "GAME_LIST=\"123\",\"1234\""  #监听赛事名
+      - "GZCTF_URL=http://xx.xx.xx.xx/"  #GZCTF网址
+      - "GZ_USER=your_admin"  #GZCTF管理员用户名
+      - "GZ_PASS=your_password"  #GZCTF管理员密码
+      - "SUPER=\"123123123\",\"234234234\""  #机器人管理员qq号
+```
+将上述内容保存为`docker-compose.yml`文件  
+```bash
+docker-compose up -d
+```
+随后使用下列命令扫码登录
+```bash
+docker logs napcat
+```
+如果提示失效，请再次输入上述命令查看更新后的二维码  
+或者通过`napcat/app/qrcode.png`扫码登录  
+或者打开网站`http://[此处替换为本机IP]:6099/webui`扫码登录  
+初始登录`token`在`napcat/config/webui.json`中  
 ### 手动安装:
+#### Docker 容器安装机器人
+仅启动机器人，不包含NapCatQQ  
+将下文修改好的 `config.py` 和 `.env` 文件复制到同一目录下，并进入目录，执行如下命令  
+```bash
+docker run -d \
+-p 8988:8988 \
+-e SEND_LIST=123456,1234567 \
+-e GAME_LIST="'123','1234'" \
+-e GZCTF_URL=http://xx.xx.xx.xx/ \
+-e GZ_USER=your_admin \
+-e GZ_PASS=your_password \
+-e SUPER='"123123123","234234234"' \
+--name gzctf-bot-qq \
+--restart=always \
+registry.cn-hangzhou.aliyuncs.com/moran233/nn:GZBOT
+```
+或者  
 下载项目并解压，进入项目文件夹
 #### 1. 安装python3.10
 ```bash
@@ -184,7 +243,7 @@ ONEBOT_ACCESS_TOKEN=GZCTFBOT xsaFFAFSaaxa
 ```bash
 nohup python3 bot.py >bot.log 2>&1 &
 ```
-机器人的日志将会存放到`bot.log`文件中  
+机器人的日志将会存放到`bot.log`文件中
 ### 更新
 #### napcatQQ更新
 保存好`napcat/config/onebot11_[你的QQ号].json`文件  

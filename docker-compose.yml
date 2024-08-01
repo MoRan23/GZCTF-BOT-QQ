@@ -1,0 +1,27 @@
+version: "3.7"
+services:
+  napcat:
+    image: mlikiowa/napcat-docker:latest
+    restart: always
+    ports:
+      - "6099:6099"
+    environment:
+      - "ACCOUNT=your_account"  #机器人的qq号
+      - "WSR_ENABLE=true"
+      - "WS_URLS=\"ws://bot:8988/onebot/v11/ws/\""
+    volumes:
+      - "./napcat/app:/usr/src/app/napcat"
+      - "./napcat/config:/usr/src/app/napcat/config"
+    depends_on:
+      - bot
+
+  bot:
+    image: registry.cn-hangzhou.aliyuncs.com/moran233/nn:GZBOT
+    restart: always
+    environment:
+      - "SEND_LIST=123456,1234567"  #监听qq群号
+      - "GAME_LIST=\"123\",\"1234\""  #监听赛事名
+      - "GZCTF_URL=http://xx.xx.xx.xx/"  #GZCTF网址
+      - "GZ_USER=your_admin"  #GZCTF管理员用户名
+      - "GZ_PASS=your_password"  #GZCTF管理员密码
+      - "SUPER=\"123123123\",\"234234234\""  #机器人管理员qq号
