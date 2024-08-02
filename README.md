@@ -64,7 +64,7 @@ services:
 ```
 将上述内容保存为`docker-compose.yml`文件  
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 随后使用下列命令扫码登录
 ```bash
@@ -73,7 +73,14 @@ docker logs napcat
 如果提示失效，请再次输入上述命令查看更新后的二维码  
 或者通过`napcat/app/qrcode.png`扫码登录  
 或者打开网站`http://[此处替换为本机IP]:6099/webui`扫码登录  
-初始登录`token`在`napcat/config/webui.json`中  
+初始登录`token`在`napcat/config/webui.json`中
+#### 更新
+```bash
+docker compose down
+docker compose pull
+docker compose up -d
+```
+随后再次执行登录操作
 ### 手动安装:
 #### Docker 容器安装机器人
 仅启动机器人，不包含NapCatQQ  
