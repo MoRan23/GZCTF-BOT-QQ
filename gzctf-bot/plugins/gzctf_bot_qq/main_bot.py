@@ -13,10 +13,11 @@ CONFIG = get_plugin_config(Config).CONFIG
 GAME_LIST = []
 if CONFIG.get("GAME_LIST"):
     for gameName in CONFIG.get("GAME_LIST"):
-        GAME_LIST = getGameList(name=gameName)
-        if not GAME_LIST:
+        TEMP_LIST = getGameList(name=gameName)
+        if not TEMP_LIST:
             print(f"赛事 [{gameName}] 不存在!")
             exit()
+        GAME_LIST.append(TEMP_LIST[0])
 else:
     GAME_LIST = getGameList()
 H = require("nonebot_plugin_apscheduler").scheduler
@@ -241,10 +242,7 @@ async def rank_handle(bot, event, args: Message = CommandArg()):
     arg = args.extract_plain_text().strip()
     args = parseArgs(arg)
     if len(args) == 0:
-        if CONFIG.get("GAME_LIST"):
-            for gameName in CONFIG.get("GAME_LIST"):
-                GAME_LIST = getGameList(name=gameName)
-        else:
+        if not CONFIG.get("GAME_LIST"):
             GAME_LIST = getGameList()
         rankMsg = "=======================\n"
         for gameInfo in GAME_LIST:
@@ -348,10 +346,7 @@ async def trank_handle(bot, event, args: Message = CommandArg()):
     arg = args.extract_plain_text().strip()
     args = parseArgs(arg)
     if len(args) == 1:
-        if CONFIG.get("GAME_LIST"):
-            for gameName in CONFIG.get("GAME_LIST"):
-                GAME_LIST = getGameList(name=gameName)
-        else:
+        if not CONFIG.get("GAME_LIST"):
             GAME_LIST = getGameList()
         teamInfo = getTeamInfoWithName(args[0])
         if not teamInfo:
@@ -755,10 +750,7 @@ async def q_handle(bot, event, args: Message = CommandArg()):
     arg = args.extract_plain_text().strip()
     args = parseArgs(arg)
     if len(args) == 0:
-        if CONFIG.get("GAME_LIST"):
-            for gameName in CONFIG.get("GAME_LIST"):
-                GAME_LIST = getGameList(name=gameName)
-        else:
+        if not CONFIG.get("GAME_LIST"):
             GAME_LIST = getGameList()
         qMsg = "=======================\n"
         for gameInfo in GAME_LIST:
@@ -892,10 +884,7 @@ async def qa_handle(bot, event, args: Message = CommandArg()):
     arg = args.extract_plain_text().strip()
     args = parseArgs(arg)
     if len(args) == 0:
-        if CONFIG.get("GAME_LIST"):
-            for gameName in CONFIG.get("GAME_LIST"):
-                GAME_LIST = getGameList(name=gameName)
-        else:
+        if not CONFIG.get("GAME_LIST"):
             GAME_LIST = getGameList()
         qMsg = "=======================\n"
         for gameInfo in GAME_LIST:
