@@ -1,0 +1,7 @@
+pydantic==2.8.2
+requests==2.31.0
+pytz==2024.1
+nb-cli
+nonebot2
+nonebot-adapter-onebot
+nonebot2[fastapi]
