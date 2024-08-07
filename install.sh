@@ -34,7 +34,7 @@ change_Source(){
 # shellcheck disable=SC2162
 read -p "输入docker镜像源（默认内置源）: " source_add
 if [ -z "$source_add" ]; then
-    source_add="https://hub.huhstsec.top/"
+    source_add="https://hub.hk1.dkdun.com/"
 fi
 echo "使用的镜像源是: $source_add"
 wget -O daemon.json https://cdn.moran233.xyz/https://raw.githubusercontent.com/MoRan23/GZCTF-Auto/main/config-auto/docker/daemon.json
