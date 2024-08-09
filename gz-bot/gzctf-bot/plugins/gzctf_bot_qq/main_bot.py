@@ -29,6 +29,8 @@ for gameInfo in GAME_LIST:
     GAMENOTICE[f"gameId_{str(gameInfo['id'])}"] = getGameNotice(gameInfo['id'])
 UTC8 = timezone(timedelta(hours=8))
 GZCTF_URL = CONFIG["GZCTF_URL"].rstrip('/')
+LISTEN_GROUP = CONFIG["SEND_LIST"]
+SEND_GROUP = []
 
 helpMsg = """=======================
 ************公共功能**************
@@ -45,6 +47,7 @@ helpMsg = """=======================
 ************管理功能**************
 /open: 开启播报
 /close: 关闭播报
+(以上开关播报功能，在监听群聊使用则开关该群聊的播报，私聊使用则开关所有监听群聊播报)
 /openb: 开启自动封禁
 /closeb: 关闭自动封禁
 /qa <比赛名(默认为监听的比赛)>: 查看所有赛题
@@ -178,14 +181,35 @@ async def game_handle(bot, event):
 
 @open.handle()
 async def open_handle(bot, event):
-    global STATUS
+    global STATUS, SEND_GROUP
     try:
         if STATUS:
-            await bot.send(event, "播报本来就开着")
-            return
+            if await checkIfGroup(event):
+                if event.group_id in SEND_GROUP:
+                    await bot.send(event, f"群 [{str(event.group_id)}] 播报本来就开着")
+                    return
+                else:
+                    SEND_GROUP.append(event.group_id)
+                    await bot.send(event, f"群 [{str(event.group_id)}] 已开启播报")
+                    return
+            else:
+                if SEND_GROUP == LISTEN_GROUP:
+                    await bot.send(event, "所有群播报本来就开着")
+                    return
+                else:
+                    SEND_GROUP = LISTEN_GROUP
+                    await bot.send(event, f"已开启群 {str(SEND_GROUP)} 播报")
+                    return
         else:
             STATUS = True
-            await bot.send(event, "已开启播报")
+            if await checkIfGroup(event):
+                SEND_GROUP.append(event.group_id)
+                await bot.send(event, f"群 [{str(event.group_id)}] 已开启播报")
+                return
+            else:
+                SEND_GROUP = LISTEN_GROUP
+                await bot.send(event, f"已开启群 {str(SEND_GROUP)} 播报")
+                return
     except Exception as e:
         print(e)
         await bot.send(event, "Error")
@@ -193,14 +217,27 @@ async def open_handle(bot, event):
 
 @close.handle()
 async def close_handle(bot, event):
-    global STATUS
+    global STATUS, SEND_GROUP
     try:
         if not STATUS:
-            await bot.send(event, "播报本来就关着")
+            await bot.send(event, "群播报本来就关着")
             return
         else:
-            STATUS = False
-            await bot.send(event, "已关闭播报")
+            if await checkIfGroup(event):
+                if event.group_id in SEND_GROUP:
+                    SEND_GROUP.remove(event.group_id)
+                    await bot.send(event, f"群 [{str(event.group_id)}] 已关闭播报")
+                    if not SEND_GROUP:
+                        STATUS = False
+                    return
+                else:
+                    await bot.send(event, f"群 [{str(event.group_id)}] 播报本来就关着")
+                    return
+            else:
+                SEND_GROUP = []
+                STATUS = False
+                await bot.send(event, f"已关闭群 {str(LISTEN_GROUP)} 播报")
+                return
     except Exception as e:
         print(e)
         await bot.send(event, "Error")
@@ -1235,7 +1272,7 @@ async def _():
                             msg = msgTemp_all.format(type=msgList[msgType], gameName=gameInfo['title'],
                                                      time=f"{msgTime[0]}-{msgTime[1]}-{msgTime[2]} {msgTime[3]}:{msgTime[4]}:{msgTime[5]}",
                                                      content=msgContent[0])
-                        for id in CONFIG.get("SEND_LIST"):
+                        for id in SEND_GROUP:
                             try:
                                 await bot.send_msg(group_id=id, message=msg)
                             except Exception as e:
@@ -1265,7 +1302,7 @@ async def _():
                                                  flagOwner=flagOwner)
                         banTeam(teamIds)
                         GAMECHEATS[f"gameId_{str(gameInfo['id'])}"] = getCheatInfo(gameInfo['id'])
-                        for id in CONFIG.get("SEND_LIST"):
+                        for id in SEND_GROUP:
                             try:
                                 await bot.send_msg(group_id=id, message=msg)
                             except Exception as e:

@@ -89,7 +89,7 @@ start
 mv daemon.json /etc/docker/daemon.json
 sudo systemctl daemon-reload && sudo systemctl restart docker
 
-cd GZCTF-BOT-QQ || exit
+cd GZCTF-BOT-QQ/gz-bot || exit
 sudo apt install -y software-properties-common
 sudo DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:deadsnakes/ppa
 sudo apt -y update

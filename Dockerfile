@@ -2,8 +2,9 @@ FROM python:3.10-slim-bookworm
 
 COPY gz-bot /root/GZCTF-BOT-QQ
 
-RUN mv /root/GZCTF-BOT-QQ/start.sh /start.sh && \
-    chmod +x /start.sh && \
+COPY start.sh /start.sh
+
+RUN chmod +x /start.sh && \
     chmod 777 /start.sh && \
     cd /root/GZCTF-BOT-QQ && \
     pip install -i https://mirrors.ustc.edu.cn/pypi/web/simple pip -U && \
