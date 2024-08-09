@@ -1,18 +1,58 @@
 #!/bin/bash
 
+stty erase '^H'
+red_echo() {
+    echo -e "\e[91m$1\e[0m"
+}
+
+green_echo() {
+    echo -e "\e[92m$1\e[0m"
+}
+
 start(){
     sudo apt-get -y update
     sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y --no-install-recommends -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install apt-transport-https ca-certificates curl software-properties-common dnsutils debian-keyring debian-archive-keyring git
-    curl -fsSL http://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | sudo apt-key add -
-    sudo add-apt-repository -y "deb [arch=amd64] http://mirrors.aliyun.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable"
-    sudo apt-get -y update
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install docker-ce docker-compose-plugin
     sudo git clone https://cdn.moran233.xyz/https://github.com/MoRan23/GZCTF-BOT-QQ.git
 }
 
+check(){
+    if [ $(id -u) != "0" ]; then
+        red_echo "请使用root用户执行此脚本！"
+        exit 1
+    fi
+    if ! command -v docker &> /dev/null
+    then
+        red_echo "Docker 未安装."
+        curl -fsSL http://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | sudo apt-key add -
+        sudo add-apt-repository -y "deb [arch=amd64] http://mirrors.aliyun.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable"
+        sudo apt-get -y update
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install docker-ce docker-compose-plugin
+    else
+        green_echo "Docker 已安装."
+        if ! dpkg -l | grep docker-ce &> /dev/null
+        then
+            if ! dpkg -l | grep docker-compose-plugin &> /dev/null
+            then
+                green_echo "安装 Docker-compose."
+                sudo DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install docker-compose-plugin
+            else
+                green_echo "Docker-compose 已安装."
+            fi
+        else
+            if ! dpkg -l | grep docker-compose-v2 &> /dev/null
+            then
+                green_echo "安装 Docker-compose."
+                sudo DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install docker-compose-v2
+            else
+                green_echo "Docker-compose 已安装."
+            fi
+        fi
+    fi
+}
+
 change_Source(){
-    echo "正在自动换源..."
+    green_echo "正在自动换源..."
     if [ -f /etc/os-release ]; then
     . /etc/os-release
     VERSION_ID=$(echo "$VERSION_ID" | tr -d '"')
@@ -20,14 +60,14 @@ change_Source(){
     minor=$(echo "$VERSION_ID" | cut -d '.' -f 2)
     if [ "$major" -lt 24 ] || { [ "$major" -eq 24 ] && [ "$minor" -lt 4 ]; }; then
         sudo sed -i 's@//.*archive.ubuntu.com@//mirrors.ustc.edu.cn@g' /etc/apt/sources.list
-        echo "换源成功！"
+        green_echo "换源成功！"
     else
         sudo sed -i 's@//.*archive.ubuntu.com@//mirrors.ustc.edu.cn@g' /etc/apt/sources.list.d/ubuntu.sources
-        echo "换源成功！"
+        green_echo "换源成功！"
     fi
     else
-        echo "/etc/os-release 文件不存在，无法确定系统版本信息。"
-        echo "换源失败，请手动换源！"
+        red_echo "/etc/os-release 文件不存在，无法确定系统版本信息。"
+        red_echo "换源失败，请手动换源！"
     fi
 }
 
@@ -115,9 +155,9 @@ docker run -d \
 mlikiowa/napcat-docker:latest
 
 docker logs napcat
-echo "请扫码登录QQ"
-echo "或者通过 napcat/app/qrcode.png 扫码登录"
-echo "或者打开网站 http://$public_ip:6099/webui 扫码登录"
+green_echo "请扫码登录QQ"
+green_echo "或者通过 napcat/app/qrcode.png 扫码登录"
+green_echo "或者打开网站 http://$public_ip:6099/webui 扫码登录"
 
 while true; do
     docker logs napcat
@@ -125,14 +165,14 @@ while true; do
 
     case $Y in
         y)
-            echo "登录成功，下一步......"
+            green_echo "登录成功，下一步......"
             break
             ;;
         n)
-            echo "重新获取二维码......"
+            green_echo "重新获取二维码......"
             ;;
         *)
-            echo "无效的选择，请重新输入！"
+            red_echo "无效的选择，请重新输入！"
             ;;
     esac
 done
@@ -164,4 +204,4 @@ sed -i "s|\"GZ_PASS\": \"\"|\"GZ_PASS\": \"$admin_pass\"|g" ./gzctf-bot/plugins/
 
 nohup python3 bot.py >bot.log 2>&1 &
 
-echo "部署成功！"
+green_echo "部署成功！"
