@@ -68,7 +68,7 @@ docker compose up -d
 ```
 随后使用下列命令扫码登录
 ```bash
-docker logs napcat
+docker compose logs napcat
 ```
 如果提示失效，请再次输入上述命令查看更新后的二维码  
 或者通过`napcat/app/qrcode.png`扫码登录  
