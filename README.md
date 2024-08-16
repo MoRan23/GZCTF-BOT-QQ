@@ -138,7 +138,7 @@ vim /etc/docker/daemon.json
 ```json
 {
     "registry-mirrors": [
-        "https://hub.hk1.dkdun.com/"
+        "https://hub.docker-alhk.dkdun.com/"
     ]
 }
 ```
