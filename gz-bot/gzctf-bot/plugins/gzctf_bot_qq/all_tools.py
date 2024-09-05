@@ -199,7 +199,7 @@ def getChallenges(game_id: int):
         challenges = SESSION.get(url=API_CHALLENGES_URL, headers=HEADERS)
     except Exception as e:
         print(e)
-        challenges = {}
+        challenges = []
     allChallenges = challenges.json()
     allChallenges.sort(key=lambda x: (x["tag"], x["isEnabled"]))
     return allChallenges
