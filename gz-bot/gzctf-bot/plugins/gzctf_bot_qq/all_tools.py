@@ -167,7 +167,7 @@ def getGameNotice(game_id: int):
         game_notice = SESSION.get(url=API_GAME_NOTICE_URL, headers=HEADERS)
     except Exception as e:
         print(e)
-        game_notice = {}
+        game_notice = []
     return game_notice.json()
 
 
@@ -269,9 +269,9 @@ def unlockTeam(teamId: int):
     if not checkCookieExpired():
         getLogin()
     API_UNLOCK_TEAM_URL = GZCTF_URL + f"/api/admin/teams/{str(teamId)}"
-    data = "{\"locked\":false}"
+    data = {"locked": False}
     try:
-        unlock = SESSION.put(url=API_UNLOCK_TEAM_URL, headers=HEADERS, data=data)
+        unlock = SESSION.put(url=API_UNLOCK_TEAM_URL, headers=HEADERS, json=data)
         if unlock.status_code == 200:
             return True
     except Exception as e:
@@ -467,6 +467,7 @@ def resetPwd(userName: str):
         print(e)
     return False
 
+
 def addNotice(gameId: int, notice: str):
     """
         添加公告
@@ -475,14 +476,15 @@ def addNotice(gameId: int, notice: str):
     if not checkCookieExpired():
         getLogin()
     API_ADD_NOTICE_URL = GZCTF_URL + f"/api/edit/games/{str(gameId)}/notices"
-    data = "{\"content\":\"" + notice + "\"}"
+    data = {"content": notice}
     try:
-        add = SESSION.post(url=API_ADD_NOTICE_URL, headers=HEADERS, data=data)
+        add = SESSION.post(url=API_ADD_NOTICE_URL, json=data)
         if add.status_code == 200:
             return True
     except Exception as e:
         print(e)
     return False
+
 
 def addHint(gameId: int, challengeId: int, hint: str):
     """
