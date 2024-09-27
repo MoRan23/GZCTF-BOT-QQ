@@ -201,7 +201,10 @@ def getChallenges(game_id: int):
         print(e)
         challenges = []
     allChallenges = challenges.json()
-    allChallenges.sort(key=lambda x: (x["tag"], x["isEnabled"]))
+    allChallenges.sort(key=lambda x: (x["category"], x["isEnabled"]))
+    for challenge in allChallenges:
+        if 'category' in challenge:
+            challenge['tag'] = challenge.pop('category')
     return allChallenges
 
 
@@ -219,7 +222,9 @@ def getChallengesInfo(game_id: int, challenge_id: int):
     except Exception as e:
         print(e)
         challenges_info = {}
-    return challenges_info.json()
+    challengesInfo = challenges_info.json()
+    challengesInfo['tag'] = challengesInfo.pop('category')
+    return challengesInfo
 
 
 def openOrCloseChallenge(game_id: int, challenge_id: int, isEnable: bool):
