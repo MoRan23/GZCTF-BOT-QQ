@@ -71,7 +71,7 @@ def getGameList(name: str = None):
     if not checkCookieExpired():
         getLogin()
     try:
-        game_list = SESSION.get(url=API_GAME_LIST_URL, headers=HEADERS)
+        game_list = SESSION.get(url=API_GAME_LIST_URL, headers=HEADERS, verify=False)
     except Exception as e:
         game_list = []
     if name:
@@ -93,7 +93,7 @@ def getGameInfo(game_id: int):
     if not checkCookieExpired():
         getLogin()
     try:
-        game_info = SESSION.get(url=API_GAME_INFO_URL, headers=HEADERS)
+        game_info = SESSION.get(url=API_GAME_INFO_URL, headers=HEADERS, verify=False)
     except Exception as e:
         print(e)
         game_info = {}
@@ -106,7 +106,7 @@ def getLogin():
     """
     global LOGINDATA, HEADERS, SESSION, GZCTF_URL
     API_LOGIN_URL = GZCTF_URL + "/api/account/login"
-    login = SESSION.post(url=API_LOGIN_URL, data=LOGINDATA, headers=HEADERS)
+    login = SESSION.post(url=API_LOGIN_URL, data=LOGINDATA, headers=HEADERS, verify=False)
 
 
 def checkCookieExpired():
@@ -121,7 +121,7 @@ def checkCookieExpired():
             }
             API_CHECK_COOKIE_URL = GZCTF_URL + "/api/admin/config"
             try:
-                check = SESSION.get(url=API_CHECK_COOKIE_URL, headers=headers)
+                check = SESSION.get(url=API_CHECK_COOKIE_URL, headers=HEADERS, verify=False)
             except Exception as e:
                 print(e)
                 return False
@@ -164,7 +164,7 @@ def getGameNotice(game_id: int):
     if not checkCookieExpired():
         getLogin()
     try:
-        game_notice = SESSION.get(url=API_GAME_NOTICE_URL, headers=HEADERS)
+        game_notice = SESSION.get(url=API_GAME_NOTICE_URL, headers=HEADERS, verify=False)
     except Exception as e:
         print(e)
         game_notice = []
@@ -180,7 +180,7 @@ def getCheatInfo(game_id: int):
     if not checkCookieExpired():
         getLogin()
     try:
-        cheat_info = SESSION.get(url=API_CHEAT_URL, headers=HEADERS)
+        cheat_info = SESSION.get(url=API_CHEAT_URL, headers=HEADERS, verify=False)
     except Exception as e:
         print(e)
         cheat_info = {}
@@ -196,7 +196,7 @@ def getChallenges(game_id: int):
     if not checkCookieExpired():
         getLogin()
     try:
-        challenges = SESSION.get(url=API_CHALLENGES_URL, headers=HEADERS)
+        challenges = SESSION.get(url=API_CHALLENGES_URL, headers=HEADERS, verify=False)
     except Exception as e:
         print(e)
         challenges = []
@@ -217,7 +217,7 @@ def getChallengesInfo(game_id: int, challenge_id: int):
     if not checkCookieExpired():
         getLogin()
     try:
-        challenges_info = SESSION.get(url=API_CHALLENGES_INFO_URL, headers=HEADERS)
+        challenges_info = SESSION.get(url=API_CHALLENGES_INFO_URL, headers=HEADERS, verify=False)
         print(challenges_info.text)
     except Exception as e:
         print(e)
@@ -240,7 +240,7 @@ def openOrCloseChallenge(game_id: int, challenge_id: int, isEnable: bool):
     else:
         data = "{\"isEnabled\":false}"
     try:
-        oc = SESSION.put(url=API_OPEN_CHALLENGE_URL, headers=HEADERS, data=data)
+        oc = SESSION.put(url=API_OPEN_CHALLENGE_URL, headers=HEADERS, verify=False, data=data)
         if oc.status_code == 200:
             return True
     except Exception as e:
@@ -276,7 +276,7 @@ def unlockTeam(teamId: int):
     API_UNLOCK_TEAM_URL = GZCTF_URL + f"/api/admin/teams/{str(teamId)}"
     data = {"locked": False}
     try:
-        unlock = SESSION.put(url=API_UNLOCK_TEAM_URL, headers=HEADERS, json=data)
+        unlock = SESSION.put(url=API_UNLOCK_TEAM_URL, headers=HEADERS, verify=False, json=data)
         if unlock.status_code == 200:
             return True
     except Exception as e:
@@ -294,7 +294,7 @@ def getTeamInfoWithName(teamName: str):
     API_TEAM_URL = GZCTF_URL + f"/api/admin/teams/search?hint={teamName}"
     allTeams = []
     try:
-        teams = SESSION.post(url=API_TEAM_URL, headers=HEADERS)
+        teams = SESSION.post(url=API_TEAM_URL, headers=HEADERS, verify=False)
     except Exception as e:
         print(e)
         teams = {}
@@ -314,7 +314,7 @@ def getTeamInfoWithId(teamId: str):
     API_TEAM_URL = GZCTF_URL + f"/api/admin/teams/search?hint={teamId}"
     allTeams = []
     try:
-        teams = SESSION.post(url=API_TEAM_URL, headers=HEADERS)
+        teams = SESSION.post(url=API_TEAM_URL, headers=HEADERS, verify=False)
     except Exception as e:
         print(e)
         teams = {}
@@ -333,7 +333,7 @@ def getTeamInfoWithGameId(game_Id: int):
         getLogin()
     API_TEAM_URL = GZCTF_URL + f"/api/game/{str(game_Id)}/participations"
     try:
-        team = SESSION.get(url=API_TEAM_URL, headers=HEADERS)
+        team = SESSION.get(url=API_TEAM_URL, headers=HEADERS, verify=False)
     except Exception as e:
         print(e)
         team = []
@@ -349,7 +349,7 @@ def getScoreBoard(game_id: int):
     if not checkCookieExpired():
         getLogin()
     try:
-        rank = SESSION.get(url=API_RANK_URL, headers=HEADERS)
+        rank = SESSION.get(url=API_RANK_URL, headers=HEADERS, verify=False)
     except Exception as e:
         print(e)
         rank = {}
@@ -413,7 +413,7 @@ def getChallengesInfoByName(game_id: int, challenge_name: str):
     if not checkCookieExpired():
         getLogin()
     try:
-        challenges_info = SESSION.get(url=API_CHALLENGES_INFO_URL, headers=HEADERS)
+        challenges_info = SESSION.get(url=API_CHALLENGES_INFO_URL, headers=HEADERS, verify=False)
     except Exception as e:
         print(e)
         challenges_info = {}
@@ -442,7 +442,7 @@ def getUserWithName(userName: str):
         getLogin()
     API_USER_URL = GZCTF_URL + f"/api/admin/Users/Search?hint={userName}"
     try:
-        user = SESSION.post(url=API_USER_URL, headers=HEADERS)
+        user = SESSION.post(url=API_USER_URL, headers=HEADERS, verify=False)
     except Exception as e:
         print(e)
         user = {}
@@ -465,7 +465,7 @@ def resetPwd(userName: str):
         return False
     API_RESET_PWD_URL = GZCTF_URL + f"/api/admin/Users/{userId}/Password"
     try:
-        reset = SESSION.delete(url=API_RESET_PWD_URL, headers=HEADERS)
+        reset = SESSION.delete(url=API_RESET_PWD_URL, headers=HEADERS, verify=False)
         if reset.status_code == 200:
             return reset.text.strip('"')
     except Exception as e:
@@ -499,13 +499,13 @@ def addHint(gameId: int, challengeId: int, hint: str):
     if not checkCookieExpired():
         getLogin()
     API_ADD_HINT_URL = GZCTF_URL + f"/api/edit/games/{str(gameId)}/challenges/{str(challengeId)}"
-    data = SESSION.get(url=API_ADD_HINT_URL, headers=HEADERS)
+    data = SESSION.get(url=API_ADD_HINT_URL, headers=HEADERS, verify=False)
     if data.status_code != 200:
         return False
     datas = data.json()
     datas['hints'].append(hint)
     try:
-        add = SESSION.put(url=API_ADD_HINT_URL, headers=HEADERS, json=datas)
+        add = SESSION.put(url=API_ADD_HINT_URL, headers=HEADERS, verify=False, json=datas)
         if add.status_code == 200:
             return True
     except Exception as e:

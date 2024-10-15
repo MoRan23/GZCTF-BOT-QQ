@@ -30,7 +30,9 @@ for gameInfo in GAME_LIST:
 UTC8 = timezone(timedelta(hours=8))
 GZCTF_URL = CONFIG["GZCTF_URL"].rstrip('/')
 LISTEN_GROUP = CONFIG["SEND_LIST"]
-SEND_GROUP = []
+SEND_GAME_LIST = {}
+for gameInfo in GAME_LIST:
+    SEND_GAME_LIST[gameInfo['title']] = []
 
 helpMsg = """=======================
 ************公共功能**************
@@ -45,9 +47,9 @@ helpMsg = """=======================
 获取赛题信息(无参数获取赛题列表)
 /team [队伍名]: 获取队伍信息
 ************管理功能**************
-/open: 开启播报
-/close: 关闭播报
-(以上开关播报功能，在监听群聊使用则开关该群聊的播报，私聊使用则开关所有监听群聊播报)
+/open <赛事名>: 开启播报
+/close <赛事名>: 关闭播报
+(以上开关播报功能，在监听群聊使用则开关该群聊的播报，私聊使用则开关所有监听群聊播报。赛事名不填默认所有赛事)
 /openb: 开启自动封禁
 /closeb: 关闭自动封禁
 /qa <比赛名(默认为监听的比赛)>: 查看所有赛题
@@ -180,64 +182,158 @@ async def game_handle(bot, event):
 
 
 @open.handle()
-async def open_handle(bot, event):
-    global STATUS, SEND_GROUP
+async def open_handle(bot, event, args: Message = CommandArg()):
+    global STATUS, SEND_GAME_LIST, LISTEN_GROUP
+    arg = args.extract_plain_text().strip()
+    args = parseArgs(arg)
+
     try:
-        if STATUS:
-            if await checkIfGroup(event):
-                if event.group_id in SEND_GROUP:
-                    await bot.send(event, f"群 [{str(event.group_id)}] 播报本来就开着")
-                    return
+        if len(args) == 1:
+            if STATUS:
+                if await checkIfGroup(event):
+                    if args[0] in SEND_GAME_LIST:
+                        if event.group_id in SEND_GAME_LIST[args[0]]:
+                            await bot.send(event, f"群 [{str(event.group_id)}] 对赛事 [{args[0]}] 播报本来就开着")
+                            return
+                        else:
+                            SEND_GAME_LIST[args[0]].append(event.group_id)
+                            await bot.send(event, f"群 [{str(event.group_id)}] 对赛事 [{args[0]}] 已开启播报")
+                            return
+                    else:
+                        await bot.send(event, "未找到比赛")
+                        return
                 else:
-                    SEND_GROUP.append(event.group_id)
-                    await bot.send(event, f"群 [{str(event.group_id)}] 已开启播报")
-                    return
+                    if args[0] in SEND_GAME_LIST:
+                        if SEND_GAME_LIST[args[0]] == LISTEN_GROUP:
+                            await bot.send(event, f"所有群对赛事 [{args[0]}] 播报本来就开着")
+                            return
+                        else:
+                            SEND_GAME_LIST[args[0]] = LISTEN_GROUP
+                            await bot.send(event, f"已开启群 {str(LISTEN_GROUP)} 对赛事 [{args[0]}] 播报")
+                            return
+                    else:
+                        await bot.send(event, "未找到比赛")
+                        return
             else:
-                if SEND_GROUP == LISTEN_GROUP:
-                    await bot.send(event, "所有群播报本来就开着")
+                STATUS = True
+                if await checkIfGroup(event):
+                    SEND_GAME_LIST[args[0]].append(event.group_id)
+                    await bot.send(event, f"群 [{str(event.group_id)}] 对赛事 [{args[0]}] 已开启播报")
                     return
                 else:
-                    SEND_GROUP = LISTEN_GROUP
-                    await bot.send(event, f"已开启群 {str(SEND_GROUP)} 播报")
+                    SEND_GAME_LIST[args[0]] = LISTEN_GROUP
+                    await bot.send(event, f"已开启群 {str(LISTEN_GROUP)} 对赛事 [{args[0]}] 播报")
                     return
         else:
-            STATUS = True
-            if await checkIfGroup(event):
-                SEND_GROUP.append(event.group_id)
-                await bot.send(event, f"群 [{str(event.group_id)}] 已开启播报")
-                return
+            if STATUS:
+                if await checkIfGroup(event):
+                    count = 0
+                    for g in GAME_LIST:
+                        if event.group_id in SEND_GAME_LIST[g['title']]:
+                            count += 1
+                    if count == len(GAME_LIST):
+                        await bot.send(event, f"群 [{str(event.group_id)}] 对所有赛事播报本来就开着")
+                        return
+                    else:
+                        for g in GAME_LIST:
+                            if event.group_id not in SEND_GAME_LIST[g['title']]:
+                                SEND_GAME_LIST[g['title']].append(event.group_id)
+                        await bot.send(event, f"群 [{str(event.group_id)}] 对所有赛事已开启播报")
+                        return
+                else:
+                    for g in GAME_LIST:
+                        if SEND_GAME_LIST[g['title']] == LISTEN_GROUP:
+                            continue
+                        else:
+                            SEND_GAME_LIST[g['title']] = LISTEN_GROUP
+                    await bot.send(event, f"已开启群 {str(LISTEN_GROUP)} 对所有赛事播报")
+                    return
             else:
-                SEND_GROUP = LISTEN_GROUP
-                await bot.send(event, f"已开启群 {str(SEND_GROUP)} 播报")
-                return
+                STATUS = True
+                if await checkIfGroup(event):
+                    for g in GAME_LIST:
+                        if event.group_id in SEND_GAME_LIST[g['title']]:
+                            continue
+                        else:
+                            SEND_GAME_LIST[g['title']].append(event.group_id)
+                    await bot.send(event, f"群 [{str(event.group_id)}] 对所有赛事已开启播报")
+                    return
+                else:
+                    for g in GAME_LIST:
+                        SEND_GAME_LIST[g['title']] = LISTEN_GROUP
+                    await bot.send(event, f"已开启群 {str(LISTEN_GROUP)} 对所有赛事播报")
+                    return
     except Exception as e:
         print(e)
         await bot.send(event, "Error")
 
 
 @close.handle()
-async def close_handle(bot, event):
-    global STATUS, SEND_GROUP
+async def close_handle(bot, event, args: Message = CommandArg()):
+    global STATUS, SEND_GAME_LIST, LISTEN_GROUP
+    arg = args.extract_plain_text().strip()
+    args = parseArgs(arg)
+
     try:
-        if not STATUS:
-            await bot.send(event, "群播报本来就关着")
-            return
+        if len(args) == 1:
+            if not STATUS:
+                await bot.send(event, "群播报本来就关着")
+                return
+            else:
+                if await checkIfGroup(event):
+                    if args[0] in SEND_GAME_LIST:
+                        if event.group_id in SEND_GAME_LIST[args[0]]:
+                            SEND_GAME_LIST[args[0]].remove(event.group_id)
+                            await bot.send(event, f"群 [{str(event.group_id)}] 对赛事 [{args[0]}] 已关闭播报")
+                            count = 0
+                            for g in GAME_LIST:
+                                if not SEND_GAME_LIST[g['title']]:
+                                    count += 1
+                            if count == len(GAME_LIST):
+                                STATUS = False
+                            return
+                        else:
+                            await bot.send(event, f"群 [{str(event.group_id)}] 对赛事 [{args[0]}] 播报本来就关着")
+                            return
+                    else:
+                        await bot.send(event, "未找到比赛")
+                        return
+                else:
+                    if args[0] in SEND_GAME_LIST:
+                        SEND_GAME_LIST[args[0]] = []
+                        count = 0
+                        for g in GAME_LIST:
+                            if not SEND_GAME_LIST[g['title']]:
+                                count += 1
+                        if count == len(GAME_LIST):
+                            STATUS = False
+                        await bot.send(event, f"已关闭群 {str(LISTEN_GROUP)} 对赛事 [{args[0]}] 播报")
+                        return
+                    else:
+                        await bot.send(event, "未找到比赛")
+                        return
         else:
-            if await checkIfGroup(event):
-                if event.group_id in SEND_GROUP:
-                    SEND_GROUP.remove(event.group_id)
-                    await bot.send(event, f"群 [{str(event.group_id)}] 已关闭播报")
-                    if not SEND_GROUP:
+            if not STATUS:
+                await bot.send(event, "群播报本来就关着")
+                return
+            else:
+                if await checkIfGroup(event):
+                    count = 0
+                    for g in GAME_LIST:
+                        if event.group_id in SEND_GAME_LIST[g['title']]:
+                            SEND_GAME_LIST[g['title']].remove(event.group_id)
+                        if not SEND_GAME_LIST[g['title']]:
+                            count += 1
+                    await bot.send(event, f"群 [{str(event.group_id)}] 对所有赛事已关闭播报")
+                    if count == len(GAME_LIST):
                         STATUS = False
                     return
                 else:
-                    await bot.send(event, f"群 [{str(event.group_id)}] 播报本来就关着")
+                    for g in GAME_LIST:
+                        SEND_GAME_LIST[g['title']] = []
+                    await bot.send(event, f"已关闭群 {str(LISTEN_GROUP)} 对所有赛事播报")
+                    STATUS = False
                     return
-            else:
-                SEND_GROUP = []
-                STATUS = False
-                await bot.send(event, f"已关闭群 {str(LISTEN_GROUP)} 播报")
-                return
     except Exception as e:
         print(e)
         await bot.send(event, "Error")
@@ -1272,12 +1368,12 @@ async def _():
                             msg = msgTemp_all.format(type=msgList[msgType], gameName=gameInfo['title'],
                                                      time=f"{msgTime[0]}-{msgTime[1]}-{msgTime[2]} {msgTime[3]}:{msgTime[4]}:{msgTime[5]}",
                                                      content=msgContent[0])
-                        for id in SEND_GROUP:
+                        for id in SEND_GAME_LIST[gameInfo['title']]:
                             try:
-                                await bot.send_msg(group_id=id, message=msg)
+                                await bot.send_group_msg(group_id=id, message=msg)
                             except Exception as e:
                                 print(e)
-                                await bot.send_msg(group_id=id, message="Error")
+                                await bot.send_group_msg(group_id=id, message="Error")
             GAMECHEATS[f"gameId_{str(gameInfo['id'])}"] = getCheatInfo(gameInfo['id'])
             if BAN_STATUS:
                 tmpGameCheats = getCheatInfo(gameInfo['id'])
@@ -1302,9 +1398,9 @@ async def _():
                                                  flagOwner=flagOwner)
                         banTeam(teamIds)
                         GAMECHEATS[f"gameId_{str(gameInfo['id'])}"] = getCheatInfo(gameInfo['id'])
-                        for id in SEND_GROUP:
+                        for id in SEND_GAME_LIST[gameInfo['title']]:
                             try:
-                                await bot.send_msg(group_id=id, message=msg)
+                                await bot.send_group_msg(group_id=id, message=msg)
                             except Exception as e:
                                 print(e)
-                                await bot.send_msg(group_id=id, message="Error")
+                                await bot.send_group_msg(group_id=id, message="Error")
