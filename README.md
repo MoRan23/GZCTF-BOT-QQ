@@ -34,11 +34,7 @@ GZCTF对接的qq机器人，基于NapCat+Nonebot框架
 | 管理员添加赛事公告   | 已完成 |
 | 分群分赛事播报     | 已完成 |
 ## 使用方法
-环境: Ubuntu 22.04  
-### 使用一键脚本:  
-```bash
-wget -O install.sh https://cdn.moran233.xyz/https://raw.githubusercontent.com/MoRan23/GZCTF-BOT-QQ/main/install.sh && chmod +x install.sh && ./install.sh
-```
+环境: Ubuntu 22.04
 ### docker compose安装机器人
 ```yaml
 version: "3.7"
