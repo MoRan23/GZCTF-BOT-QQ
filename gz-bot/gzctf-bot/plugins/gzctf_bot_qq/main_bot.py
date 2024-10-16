@@ -1302,14 +1302,12 @@ async def team_handle(bot, event, args: Message = CommandArg()):
             teamMsg += f"｢{info['bio']}｣\n"
             teamMsg += "-----------------------\n"
             for member in info['members']:
+                if member['captain']:
+                    teamMsg += f"===｢{member['userName']}(队长)｣===\n"
+                else:
+                    teamMsg += f"===｢{member['userName']}(队员)｣===\n"
                 if member['avatar']:
                     teamMsg += MessageSegment.image(GZCTF_URL+member['avatar'])
-                if member['captain']:
-                    teamMsg += f"   ｢{member['userName']}｣\n"
-                    teamMsg += f"   ｢队长｣\n"
-                else:
-                    teamMsg += f"   ｢{member['userName']}｣\n"
-                    teamMsg += f"   ｢队员｣\n"
                 teamMsg += f"｢{member['bio']}｣\n"
                 teamMsg += "-----------------------\n"
             teamMsg += f"=======================\n"
