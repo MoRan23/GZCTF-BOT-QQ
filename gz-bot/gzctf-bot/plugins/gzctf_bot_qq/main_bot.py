@@ -167,6 +167,7 @@ async def game_handle(bot, event):
             else:
                 status = '已结束'
             gameListMsg += f"比赛名称: {gameInfo['title']}\n开始时间: {start_Time}\n结束时间: {end_Time}\n比赛状态: {status}\n"
+            gameListMsg += f"本群播报: {'开启' if event.group_id in SEND_GAME_LIST[gameInfo['title']] else '关闭'}\n"
             if gameAllInfo['organizations']:
                 gameListMsg += "参赛组织:"
                 for org in gameAllInfo['organizations']:
@@ -183,7 +184,7 @@ async def game_handle(bot, event):
 
 @open.handle()
 async def open_handle(bot, event, args: Message = CommandArg()):
-    global STATUS, SEND_GAME_LIST, LISTEN_GROUP
+    global STATUS, SEND_GAME_LIST
     arg = args.extract_plain_text().strip()
     args = parseArgs(arg)
 
@@ -208,7 +209,7 @@ async def open_handle(bot, event, args: Message = CommandArg()):
                             await bot.send(event, f"所有群对赛事 [{args[0]}] 播报本来就开着")
                             return
                         else:
-                            SEND_GAME_LIST[args[0]] = LISTEN_GROUP
+                            SEND_GAME_LIST[args[0]] = LISTEN_GROUP.copy()
                             await bot.send(event, f"已开启群 {str(LISTEN_GROUP)} 对赛事 [{args[0]}] 播报")
                             return
                     else:
@@ -221,7 +222,7 @@ async def open_handle(bot, event, args: Message = CommandArg()):
                     await bot.send(event, f"群 [{str(event.group_id)}] 对赛事 [{args[0]}] 已开启播报")
                     return
                 else:
-                    SEND_GAME_LIST[args[0]] = LISTEN_GROUP
+                    SEND_GAME_LIST[args[0]] = LISTEN_GROUP.copy()
                     await bot.send(event, f"已开启群 {str(LISTEN_GROUP)} 对赛事 [{args[0]}] 播报")
                     return
         else:
@@ -245,7 +246,7 @@ async def open_handle(bot, event, args: Message = CommandArg()):
                         if SEND_GAME_LIST[g['title']] == LISTEN_GROUP:
                             continue
                         else:
-                            SEND_GAME_LIST[g['title']] = LISTEN_GROUP
+                            SEND_GAME_LIST[g['title']] = LISTEN_GROUP.copy()
                     await bot.send(event, f"已开启群 {str(LISTEN_GROUP)} 对所有赛事播报")
                     return
             else:
@@ -260,7 +261,7 @@ async def open_handle(bot, event, args: Message = CommandArg()):
                     return
                 else:
                     for g in GAME_LIST:
-                        SEND_GAME_LIST[g['title']] = LISTEN_GROUP
+                        SEND_GAME_LIST[g['title']] = LISTEN_GROUP.copy()
                     await bot.send(event, f"已开启群 {str(LISTEN_GROUP)} 对所有赛事播报")
                     return
     except Exception as e:
@@ -270,7 +271,7 @@ async def open_handle(bot, event, args: Message = CommandArg()):
 
 @close.handle()
 async def close_handle(bot, event, args: Message = CommandArg()):
-    global STATUS, SEND_GAME_LIST, LISTEN_GROUP
+    global STATUS, SEND_GAME_LIST
     arg = args.extract_plain_text().strip()
     args = parseArgs(arg)
 
@@ -282,8 +283,10 @@ async def close_handle(bot, event, args: Message = CommandArg()):
             else:
                 if await checkIfGroup(event):
                     if args[0] in SEND_GAME_LIST:
-                        if event.group_id in SEND_GAME_LIST[args[0]]:
-                            SEND_GAME_LIST[args[0]].remove(event.group_id)
+                        group_ids = SEND_GAME_LIST[args[0]]
+                        if event.group_id in group_ids:
+                            group_ids.remove(event.group_id)
+                            SEND_GAME_LIST[args[0]] = group_ids
                             await bot.send(event, f"群 [{str(event.group_id)}] 对赛事 [{args[0]}] 已关闭播报")
                             count = 0
                             for g in GAME_LIST:
@@ -320,9 +323,10 @@ async def close_handle(bot, event, args: Message = CommandArg()):
                 if await checkIfGroup(event):
                     count = 0
                     for g in GAME_LIST:
-                        if event.group_id in SEND_GAME_LIST[g['title']]:
-                            SEND_GAME_LIST[g['title']].remove(event.group_id)
-                        if not SEND_GAME_LIST[g['title']]:
+                        group_ids = SEND_GAME_LIST[g['title']]
+                        if event.group_id in group_ids:
+                            group_ids.remove(event.group_id)
+                        if not group_ids:
                             count += 1
                     await bot.send(event, f"群 [{str(event.group_id)}] 对所有赛事已关闭播报")
                     if count == len(GAME_LIST):
@@ -1292,19 +1296,21 @@ async def team_handle(bot, event, args: Message = CommandArg()):
             return
         teamMsg = "=======================\n"
         for info in teamInfo:
-            teamMsg += f"==={info['name']}===\n"
+            teamMsg += f"===｢{info['name']}｣===\n"
             if info['avatar']:
                 teamMsg += MessageSegment.image(GZCTF_URL+info['avatar'])
-            teamMsg += f"签名: {info['bio']}\n"
+            teamMsg += f"｢{info['bio']}｣\n"
             teamMsg += "-----------------------\n"
             for member in info['members']:
                 if member['avatar']:
                     teamMsg += MessageSegment.image(GZCTF_URL+member['avatar'])
                 if member['captain']:
-                    teamMsg += f"队长: {member['userName']}\n"
+                    teamMsg += f"   ｢{member['userName']}｣\n"
+                    teamMsg += f"   ｢队长｣\n"
                 else:
-                    teamMsg += f"成员: {member['userName']}\n"
-                teamMsg += f"签名: {member['bio']}\n"
+                    teamMsg += f"   ｢{member['userName']}｣\n"
+                    teamMsg += f"   ｢队员｣\n"
+                teamMsg += f"｢{member['bio']}｣\n"
                 teamMsg += "-----------------------\n"
             teamMsg += f"=======================\n"
         try:
