@@ -82,27 +82,27 @@ docker compose up -d
 随后访问`http://[此处替换为本机IP]:6099/webui`  
 输入设置的token进入后台  
 
-![](https://cdn.moran233.xyz/Hzr5EKPUNv/029488e16b6dafda0be4d751b2c5cf6a/https://raw.githubusercontent.com/MoRan23/moran/main/image-20250528160323449.png)
+![](https://raw.githubusercontent.com/MoRan23/moran/main/image-20250528160323449.png)
 
 选择扫码登录账号
 
-![image-20250528160421160](https://cdn.moran233.xyz/Hzr5EKPUNv/029488e16b6dafda0be4d751b2c5cf6a/https://raw.githubusercontent.com/MoRan23/moran/main/image-20250528160421160.png)
+![image-20250528160421160](https://raw.githubusercontent.com/MoRan23/moran/main/image-20250528160421160.png)
 
 进入后台后选择网络配置
 
-![image-20250528160518889](https://cdn.moran233.xyz/Hzr5EKPUNv/029488e16b6dafda0be4d751b2c5cf6a/https://raw.githubusercontent.com/MoRan23/moran/main/image-20250528160518889.png)
+![image-20250528160518889](https://raw.githubusercontent.com/MoRan23/moran/main/image-20250528160518889.png)
 
 点击新建
 
-![](https://cdn.moran233.xyz/Hzr5EKPUNv/029488e16b6dafda0be4d751b2c5cf6a/https://raw.githubusercontent.com/MoRan23/moran/main/image-20250528160537187.png)
+![](https://raw.githubusercontent.com/MoRan23/moran/main/image-20250528160537187.png)
 
 选择`Websocket`客户端
 
-![image-20250528160602078](https://cdn.moran233.xyz/Hzr5EKPUNv/029488e16b6dafda0be4d751b2c5cf6a/https://raw.githubusercontent.com/MoRan23/moran/main/image-20250528160602078.png)
+![image-20250528160602078](https://raw.githubusercontent.com/MoRan23/moran/main/image-20250528160602078.png)
 
 设置如图`ws://bot:8988/onebot/v11/ws/`
 
-![image-20250528160659240](https://cdn.moran233.xyz/Hzr5EKPUNv/029488e16b6dafda0be4d751b2c5cf6a/https://raw.githubusercontent.com/MoRan23/moran/main/image-20250528160659240.png)
+![image-20250528160659240](https://raw.githubusercontent.com/MoRan23/moran/main/image-20250528160659240.png)
 
 保存后即可
 
